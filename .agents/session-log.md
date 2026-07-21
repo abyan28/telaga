@@ -1,7 +1,29 @@
 # Session Log — TELAGA AL KAUTSAR
 
 > Dokumen konteks untuk sesi Hermes/agent BARU. Baca ini + `tasklist.md` dulu sebelum kerja.
-> Terakhir diperbarui: 2026-07-22 (Sesi L6.2 + L2.1 + L8.1-akun-ortu — **SELESAI** — 127 test passed, build ✓)
+> Terakhir diperbarui: 2026-07-23 (Sesi L8.1 import CSV — **SELESAI** — 134 test passed, build ✓)
+>
+> ## Sesi 2026-07-23 — L8.1 Import CSV massal murid lama (SELESAI)
+> Verified: 134 test passed (514), npm run build ✓, view:cache ✓.
+> - **MasterDataController** +3 method: `importForm`/`importStudents`/`downloadTemplate`. Route `admin.students.import`
+>   (.run POST, .template GET) — DILETAKKAN SEBELUM `/data/students/{student}` agar tak tertangkap wildcard slug.
+> - View `admin/data/import.blade.php`: upload + ringkasan hasil (✓ sukses/⏭ sudah ada/✗ gagal) + tabel info kolom + tombol Unduh Template.
+> - Sidebar: "Data Murid" jadi DROPDOWN (child: Daftar Murid + Import CSV) desktop; link "Data Murid — Import CSV" mobile.
+>   Tombol "Import CSV" di header halaman Daftar Murid.
+> - Parser: `fgetcsv` stdlib (NOL library). Header case-insensitive + buang BOM Excel. Kolom by header-map (urutan bebas).
+> - Opsi B skip+report: NIK duplikat DILEWATI (append-only re-import — admin fix baris gagal, upload ulang file yg sama).
+>   Baris gagal dikumpulkan "Baris N: {pesan}". Reuse `Student::profilRules()` + `linkOrtu()` (auto-akun ortu bila no_hp_ortu diisi).
+> - Kolom CSV: nama_lengkap,nama_panggilan,nik,nis,nisn,jenis_kelamin,agama,tempat_lahir,tanggal_lahir,anak_ke,
+>   jumlah_saudara,warga_negara,bahasa_keseharian,kondisi_kesehatan,tahun_ajaran,status,no_hp_ortu.
+>   Default: agama ISLAM, TA aktif, status aktif. TA by nama "2026/2027" → id (fallback TA aktif).
+> - Template `database/data/template-import-murid.csv` (header + 1 baris contoh).
+> - **PITFALL SQLite**: enum kosong (`sudah_mengaji`/`pernah_belajar`/`ukuran_baju`) & kolom unik kosong
+>   (`nis`/`nisn`/`nama_panggilan`) WAJIB dinormalkan '' → null sebelum `Student::create` — SQLite CHECK constraint tolak ''.
+> - Slug siswa auto-terisi via trait HasSlug (event saving) — nol kode tambahan di import.
+> - Test `ImportCsvTest` x6 (render, template, valid+auto-akun, skip dup, report gagal, RBAC guru blocked).
+> - SISA L8: L8.2 export CSV/PDF data siswa + laporan SPP (belum; pola reuse ReportController).
+>
+> ---
 >
 > ## Sesi 2026-07-22 — Biodata detail (L6.2) + Calon Murid/NIS (L2.1) + auto-akun ortu (L8.1)
 > Semua verified: 127 test passed (502), npm run build ✓, migrate:fresh --seed ✓.

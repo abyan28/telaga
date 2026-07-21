@@ -1187,13 +1187,17 @@ Plan `boleh_cicil` per-wali DIBATALKAN — user konfirmasi update: pendaftaran &
   * Test: 1 test update (K5.1→L2.1 nis-based) + 1 test baru L2.1. 126 passed (493 assertions), build ✓.
   * FIX (2026-07-22): persen_refund = persen DENDA langsung (bukan 100−x). Blade/controller/gate login diselaraskan. Default 30.
 
-- [x] ✅ **L8.1 (sebagian)** Auto-akun ortu saat input murid lama (2026-07-22).
-  Form Tambah Murid admin +field "No. HP Orang Tua" (mode create). Diisi → MasterDataController::linkOrtu()
-  (helper baru, dipakai bareng createOrtuAccount T9.1 — buang duplikasi ~20 baris): username=no_hp,
-  password=NIK anak (kakak bila kakak-adik), must_change_password, no_hp→ibu_no_hp. Merge kakak-adik by users.no_hp
-  (1 akun, sandi tak berubah). Kosong → murid saja. Keputusan: password NIK anak (no_hp bocor di grup WA; NIK aman).
-  createOrtuAccount password lama (no_hp) ikut ganti → NIK. Test WaliAccountTest +1 (add_student_with_ortu_hp) +
-  assert password=NIK. 127 passed (502 assertions), build ✓. SISA L8.1: import CSV massal BELUM.
+- [x] ✅ **L8.1 SELESAI** Auto-akun ortu + Import CSV massal murid lama (2026-07-22/23).
+  Form Tambah Murid admin +field "No. HP Orang Tua" (mode create). Diisi → `MasterDataController::linkOrtu()`
+  (reuse bareng createOrtuAccount T9.1). Password = NIK anak. Merge kakak-adik by no_hp.
+  Import CSV massal: `importForm`/`importStudents`/`downloadTemplate` di MasterDataController.
+  Route `admin.students.import(.run/.template)` — SEBELUM `{student}` (cegah slug tertangkap wildcard).
+  View `admin/data/import.blade.php`: upload + hasil (✓/⏭/✗) + tabel info kolom.
+  Sidebar: "Data Murid" → dropdown (Daftar Murid + Import CSV) desktop+mobile.
+  fgetcsv stdlib (nol library). Opsi B skip+report (NIK duplikat dilewati, append-only).
+  Template `database/data/template-import-murid.csv`. Auto-akun ortu via `linkOrtu` bila `no_hp_ortu` diisi.
+  PITFALL: enum kosong & kolom unik kosong → null sebelum create (SQLite CHECK constraint).
+  Test `ImportCsvTest` x6. 134 passed (514 assertions), build ✓.
 
 **SISA backlog WARISAN (belum masuk Fase L):**
 - Task 3.C — Deployment awal.

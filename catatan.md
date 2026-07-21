@@ -27,7 +27,19 @@
 - [done] tambah akun admin di halaman data akun
 - [done] Karena ini ubahannya banyak, bisa sekalian rename variabel guardians/guardian jadi parents/parent? Lalu juga rename label Wali dengan Orang Tua?
 - cek apakah saat ppdb ditutup dan akun ortu yg tidak punya siswa aktif sudah diblokir login atau belum. sekalian cek, harusnya jika ppdb ditutup, tidak bisa register akun wali/ortu.
-- tambahkan kolom nuptk pada tabel guru.
+
+1. Kolom CSV siswa — mana yang mau ditampilkan? Saya usulkan: Nama, NISN, NIS, NIK, Kelas, TA, Status, Nama Ortu, No HP Ortu, Tanggal
+    Lahir. Ada yang mau ditambah/dikurangi?
+    
+    2. Kolom CSV SPP — usul: Nama Murid, NISN, Kelas, TA, Bulan, Nominal, Terbayar, Sisa, Status. Setuju?
+    
+    3. "Siswa baru" filter — apakah artinya siswa yang NIS-nya diisi diTA tertentu, atau siswa yang id_academic_year =TA tertentu?
+    (keduanya bisa, tapi beda data)
+    
+    4. Laporan SPP — filter "siswa perorangan" artinya dropdown/search nama siswa lalu lihat semua tagihan SPP-nya? Atau export semua,
+    admin filter di spreadsheet?
+    
+    5. Lokasi di sidebar — tab baru di halaman Laporan yang sudah ada, atau entry sidebar baru?
 
 DISKUSI K10.4
 - setelah membaca opsi-opsi yang kamu berikan, bagaimana kalau kita buat halaman baru untuk mengelola data orang tua? Halamannya mirip halaman data siswa, jadi berupa datatable, ada fungsi search, paginasi, filter kelas, filter status aktif. Untuk judul kolomnya kira2 begini -> Nama Orang Tua - No. HP - Pekerjaan - Nama Anak - Nama Wali Kelas - Kelas - Status - Aksi. Untuk kolom anak, nama wali kelas, dan kelas, jika anaknya lebih dari satu, tetap buat dalam satu kolom namun nama anaknya ditumpuk, begitupun juga dengan nama wali kelas dan kelasnya, tapi harus sejajar dengan nama anaknya ya. Itu dengan catatan kalau tiap anak itu wali kelas dan kelasnya beda. Kalau wali kelas dan kelasnya sama, ya isi masing2 satu data wali kelas dan kelas. Nanti di kolom aksi ada button untuk lihat profil lengkap orang tua (ada alamat juga beserta list semua anaknya), edit profil orang tua, dan tentu button untuk flag bisa cicil atau gak. 

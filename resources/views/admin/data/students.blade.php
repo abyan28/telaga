@@ -16,7 +16,10 @@
     <div class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-6">
         <div class="flex flex-wrap justify-between items-center gap-3">
             <h3 class="text-base font-bold text-slate-950">Data Murid</h3>
-            <button @click="openCreate()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-colors shadow-sm">+ Tambah Murid</button>
+            <div class="flex gap-2">
+                <a href="{{ route('admin.students.import') }}" class="px-4 py-2.5 border border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold rounded-xl text-xs transition-colors">Import CSV</a>
+                <button @click="openCreate()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs transition-colors shadow-sm">+ Tambah Murid</button>
+            </div>
         </div>
 
         {{-- Filter + pencarian (T5.2) — GET, native form --}}

@@ -619,4 +619,148 @@ class MasterDataController extends Controller
 
         return back()->with('success', 'Penugasan kelas guru diperbarui.');
     }
+
+    // Kolom CSV import murid lama (L8.1). Urutan = urutan kolom di file.
+    private const IMPORT_COLUMNS = [
+        'nama_lengkap', 'nama_panggilan', 'nik', 'nis', 'nisn',
+        'jenis_kelamin', 'agama', 'tempat_lahir', 'tanggal_lahir',
+        'anak_ke', 'jumlah_saudara', 'warga_negara', 'bahasa_keseharian',
+        'kondisi_kesehatan', 'tahun_ajaran', 'status', 'no_hp_ortu',
+    ];
+
+    /**
+     * L8.1: halaman import CSV murid lama (upload + hasil).
+     */
+    public function importForm(): View
+    {
+        return view('admin.data.import');
+    }
+
+    /**
+     * L8.1: unduh template CSV (header + 1 baris contoh) dari database/data.
+     */
+    public function downloadTemplate(): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        return response()->download(database_path('data/template-import-murid.csv'), 'template-import-murid.csv');
+    }
+
+    /**
+     * L8.1: import massal murid lama dari CSV.
+     *
+     * Opsi B (skip+report): baris valid diinsert, NIK yang sudah ada dilewati
+     * (append-only — admin cukup upload ulang file yang diperbaiki), baris
+     * gagal dikumpulkan beserta alasan. TA & status default = aktif bila kosong.
+     * no_hp_ortu diisi → auto-akun ortu via linkOrtu (username=no_hp, sandi=NIK).
+     */
+    public function importStudents(Request $request): RedirectResponse|View
+    {
+        $request->validate(
+            ['file' => ['required', 'file', 'max:5120']],
+            ['file.max' => 'Ukuran file maksimal 5 MB.']
+        );
+
+        $taAktif = AcademicYear::where('is_aktif', true)->value('id_academic_years');
+        $handle = fopen($request->file('file')->getRealPath(), 'r');
+
+        // Baca & petakan header → indeks kolom (case-insensitive, buang BOM/spasi).
+        $header = fgetcsv($handle);
+        if ($header === false) {
+            fclose($handle);
+
+            return back()->withErrors(['file' => 'File CSV kosong.']);
+        }
+        $header[0] = preg_replace('/^\x{FEFF}/u', '', $header[0]); // buang BOM Excel
+        $map = [];
+        foreach ($header as $i => $name) {
+            $map[strtolower(trim((string) $name))] = $i;
+        }
+
+        $ok = 0;
+        $skip = 0; // NIK sudah ada
+        $errors = []; // ["Baris N: pesan", ...]
+        $baris = 1; // header = baris 1
+
+        while (($row = fgetcsv($handle)) !== false) {
+            $baris++;
+            if (count(array_filter($row, fn ($c) => trim((string) $c) !== '')) === 0) {
+                continue; // baris kosong
+            }
+
+            // Ambil nilai per kolom lewat header map (kolom hilang → '').
+            $data = [];
+            foreach (self::IMPORT_COLUMNS as $col) {
+                $data[$col] = isset($map[$col]) ? trim((string) ($row[$map[$col]] ?? '')) : '';
+            }
+
+            // Normalkan string kosong ke null untuk kolom opsional unik.
+            foreach (['nis', 'nisn', 'nama_panggilan'] as $col) {
+                if ($data[$col] === '') {
+                    $data[$col] = null;
+                }
+            }
+
+            // Default: agama Islam, TA aktif, status aktif (sesuai kesepakatan).
+            $data['agama'] = $data['agama'] ?: 'ISLAM';
+            $data['status'] = $data['status'] ?: 'aktif';
+
+            // Field non-form yang dipakai insert (bukan bagian profilRules).
+            $noHpOrtu = ValidationRules::normalizeNoHp($data['no_hp_ortu']) ?: null;
+            $tahunAjaran = $data['tahun_ajaran'];
+            unset($data['no_hp_ortu'], $data['tahun_ajaran']);
+
+            // Skip NIK duplikat (append-only re-import).
+            if ($data['nik'] !== '' && Student::where('nik', $data['nik'])->exists()) {
+                $skip++;
+
+                continue;
+            }
+
+            // Validasi per baris: profil murid + NIS/NISN opsional. Field cabang
+            // (ngaji/belajar) tak di CSV → beri default agar required_if tak gagal.
+            $data['sudah_mengaji'] = $data['sudah_mengaji'] ?? '';
+            $rules = Student::profilRules();
+            $rules['sudah_mengaji'] = ['nullable', 'in:Sudah,Belum'];
+            $rules['pernah_belajar'] = ['nullable', 'in:PAUD,Les,Belum'];
+            $rules['nama_panggilan'] = ['required', 'string', 'max:100'];
+            $rules['nisn'] = ['nullable', 'digits:10', 'unique:students,nisn'];
+            $rules['nis'] = ['nullable', 'digits_between:15,18', 'unique:students,nis'];
+            $rules['nik'] = ['required', 'digits:16', 'unique:students,nik'];
+            unset($rules['ukuran_baju'], $rules['ngaji_dimana'], $rules['ngaji_metode'],
+                $rules['ngaji_jilid'], $rules['belajar_keterangan']);
+
+            $v = \Validator::make($data, $rules, ValidationRules::messages());
+            if ($v->fails()) {
+                $errors[] = 'Baris '.$baris.': '.$v->errors()->first();
+
+                continue;
+            }
+            $valid = $v->validated();
+
+            // Normalkan enum kosong → null agar SQLite CHECK constraint tidak gagal.
+            foreach (['sudah_mengaji', 'pernah_belajar', 'ukuran_baju'] as $col) {
+                if (isset($valid[$col]) && $valid[$col] === '') {
+                    $valid[$col] = null;
+                }
+            }
+
+            // Resolve tahun ajaran (nama "2026/2027" → id); kosong/invalid → TA aktif.
+            $valid['id_academic_year'] = $tahunAjaran
+                ? (AcademicYear::where('tahun', $tahunAjaran)->value('id_academic_years') ?: $taAktif)
+                : $taAktif;
+            $valid['nisn'] = $valid['nisn'] ?? null;
+            $valid['nis'] = $valid['nis'] ?? null;
+
+            $student = Student::create($valid);
+            if ($noHpOrtu) {
+                $this->linkOrtu($student, $noHpOrtu);
+            }
+            $ok++;
+        }
+        fclose($handle);
+
+        AuditLogService::record('import_siswa_csv', 'Student', null, ['ok' => $ok, 'skip' => $skip, 'gagal' => count($errors)]);
+
+        // Tampilkan hasil di halaman yang sama (ringkasan + daftar error).
+        return view('admin.data.import', compact('ok', 'skip', 'errors'));
+    }
 }

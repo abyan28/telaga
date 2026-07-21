@@ -668,13 +668,21 @@ Dikelompokkan per tema. Prioritas kasar: BUG dulu → validasi → UX → fitur 
         - [L7.1] ~100 data dummy semua tabel (tunggu L1 stabil).
 
     L8. Import / export (diskusi)
-        - [L8.1] [SEBAGIAN 2026-07-22] Auto-akun ortu saat input murid lama SELESAI (prasyarat import CSV).
+        - [L8.1] [SELESAI 2026-07-22] Auto-akun ortu saat input murid lama + IMPORT CSV MASSAL.
           Form Tambah Murid (admin) +field "No. HP Orang Tua" mode create. Diisi → MasterDataController::linkOrtu()
           buat/tautkan akun: username=no_hp, password=NIK anak, must_change_password, no_hp→ibu_no_hp. Merge kakak-adik
           by users.no_hp (1 akun, sandi=NIK kakak, tak berubah). Kosong → murid saja. linkOrtu dipakai bareng
           createOrtuAccount (T9.1) — buang duplikasi. KEPUTUSAN kredensial: password=NIK anak (bukan no_hp — no_hp bocor
-          di grup WA ortu; NIK tak dihafal/tak berformat lebih aman). NISN/NIS ditolak (publik/ketebak). Test WaliAccountTest
-          x2 (add_student_with_ortu_hp + assert password=NIK). SISA L8.1: import CSV massal ratusan murid lama BELUM.
+          di grup WA ortu; NIK tak dihafal/tak berformat lebih aman). NISN/NIS ditolak (publik/ketebak).
+          IMPORT CSV (2026-07-22): MasterDataController@importForm/importStudents/downloadTemplate + route
+          admin.students.import(.run/.template). Halaman admin/data/import.blade (child dropdown "Data Murid" di sidebar,
+          desktop+mobile). fgetcsv stdlib (nol library). Opsi B skip+report: NIK duplikat dilewati (append-only re-import),
+          baris gagal dikumpulkan "Baris N: pesan". Kolom: nama_lengkap,nama_panggilan,nik,nis,nisn,jenis_kelamin,agama,
+          tempat_lahir,tanggal_lahir,anak_ke,jumlah_saudara,warga_negara,bahasa_keseharian,kondisi_kesehatan,tahun_ajaran,
+          status,no_hp_ortu. Default: agama ISLAM, TA aktif, status aktif. no_hp_ortu diisi → auto-akun ortu (linkOrtu).
+          Template database/data/template-import-murid.csv (tombol unduh). PITFALL: enum kosong (sudah_mengaji/pernah_belajar/
+          ukuran_baju) & kolom unik kosong (nis/nisn/nama_panggilan) di-normalkan '' → null sebelum create (SQLite CHECK
+          constraint tolak ''). Test ImportCsvTest x6. Total 134 passed (514).
         - [L8.2] Export CSV/PDF data siswa + laporan keuangan SPP dg filter (kelas/TA/status/baru; per-siswa/ortu/bulan/periode).
 
     L9. Deploy / email (blocked SMTP)

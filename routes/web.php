@@ -101,6 +101,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('portal/admin')->name('admin.'
     // Manajemen data — tab terpisah Siswa / Guru / Kelas (T5.1)
     Route::get('/users', [MasterDataController::class, 'index'])->name('users'); // alias -> students
     Route::get('/data/students', [MasterDataController::class, 'students'])->name('data.students');
+    Route::get('/data/students/import', [MasterDataController::class, 'importForm'])->name('students.import');
+    Route::post('/data/students/import', [MasterDataController::class, 'importStudents'])->name('students.import.run');
+    Route::get('/data/students/import/template', [MasterDataController::class, 'downloadTemplate'])->name('students.import.template');
     Route::get('/data/students/{student}', [MasterDataController::class, 'showStudent'])->name('students.show');
     Route::post('/data/students', [MasterDataController::class, 'storeStudent'])->name('students.store');
     Route::put('/data/students/{student}', [MasterDataController::class, 'updateStudent'])->name('students.update');
