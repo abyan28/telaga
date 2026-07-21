@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -59,11 +60,36 @@ class AuthController extends Controller
 
         // Coba autentikasi; parameter kedua = "remember me"
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $user = Auth::user();
+
             // L4.1: akun nonaktif (guru keluar / wali/admin dinonaktifkan) diblok — 1 guard semua role.
-            if (! Auth::user()->is_aktif) {
+            if (! $user->is_aktif) {
                 Auth::logout();
 
                 return back()->withErrors(['login' => 'Akun ini sudah nonaktif. Hubungi admin.'])->onlyInput('login');
+            }
+
+            // L2.1: blokir ortu jika PPDB tutup & tak punya anak aktif/calon-lulus/utang-DU-berjalan.
+            // PPDB buka → gate mati → akun otomatis hidup lagi (tanpa kolom flag baru).
+            if ($user->role === 'ortu' && Setting::get('pendaftaran_dibuka', '1') === '0') {
+                $punyaAnakHidup = $user->ortu?->students()
+                    ->where(function ($q) {
+                        $q->where('status', 'aktif')
+                          ->orWhereHas('registrationForms', fn ($f) => $f->where('status', 'lulus'))
+                          ->orWhere(function ($q2) {
+                              // Dibatalkan tapi masih utang denda (terbayar < denda) → akun tetap hidup.
+                              $persenDenda = (int) Setting::get('persen_refund', 30);
+                              $q2->whereHas('registrationForms', fn ($f) => $f->where('status', 'dibatalkan'))
+                                 ->whereHas('reRegistrationPayments', fn ($r) =>
+                                     $r->whereRaw('jumlah_terbayar < ROUND(total_biaya * ? / 100, 2)', [$persenDenda]));
+                          });
+                    })->exists() ?? false;
+
+                if (! $punyaAnakHidup) {
+                    Auth::logout();
+
+                    return back()->withErrors(['login' => 'Akun Anda dinonaktifkan karena tidak ada anak yang aktif. Hubungi pihak sekolah.'])->onlyInput('login');
+                }
             }
 
             $request->session()->regenerate();

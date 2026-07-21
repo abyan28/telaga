@@ -87,6 +87,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('portal/admin')->name('admin.'
     Route::get('/registrations', [AdminRegistrationController::class, 'index'])->name('registrations');
     Route::post('/ppdb/toggle', [AdminRegistrationController::class, 'togglePpdb'])->name('ppdb.toggle');
     Route::get('/daftar-ulang', [AdminRegistrationController::class, 'daftarUlang'])->name('daftar-ulang');
+    Route::get('/calon-murid', [AdminRegistrationController::class, 'calonMurid'])->name('calon-murid');
+    Route::post('/calon-murid/{student}/cancel', [AdminRegistrationController::class, 'cancelCalon'])->name('calon-murid.cancel');
+    Route::post('/calon-murid/generate-nis', [AdminRegistrationController::class, 'generateNis'])->name('calon-murid.generate-nis');
     Route::get('/spp', [AdminRegistrationController::class, 'spp'])->name('spp');
     Route::get('/registrations/{form}', [AdminRegistrationController::class, 'show'])->name('registrations.show');
     Route::post('/documents/{document}/verify', [AdminRegistrationController::class, 'verifyDocument'])->name('documents.verify');
@@ -120,6 +123,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('portal/admin')->name('admin.'
     Route::post('/settings/generate-spp', [SettingController::class, 'generateSpp'])->name('settings.generate-spp');
     // L2.4: navigasi tahun ajaran (scope=aktif|ppdb, arah=prev|next) — independen.
     Route::post('/settings/academic-year', [SettingController::class, 'setAcademicYear'])->name('settings.academic-year');
+
+    // L2.1: Pengaturan Sistem (NSM, refund, TA)
+    Route::get('/system', [SettingController::class, 'system'])->name('system');
+    Route::post('/system', [SettingController::class, 'updateSystem'])->name('system.update');
 
     // Data Akun — CRUD akun semua role (T5.6i + L4.1)
     Route::get('/accounts', [AccountController::class, 'index'])->name('accounts');

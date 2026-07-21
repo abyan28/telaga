@@ -102,7 +102,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div class="space-y-1">
                 <label class="text-2xs font-bold text-slate-500 uppercase tracking-wide">Nomor Induk Kependudukan (NIK)</label>
-                <input type="text" name="nik" x-model="nik" required maxlength="16" :class="errors.nik ? 'border-rose-300 bg-rose-50' : 'border-slate-200 bg-slate-50'" class="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all border" placeholder="16 digit NIK wajib">
+                <input type="text" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" x-model="nik" required  :class="errors.nik ? 'border-rose-300 bg-rose-50' : 'border-slate-200 bg-slate-50'" class="w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all border" placeholder="16 digit NIK wajib">
                 <template x-if="errors.nik"><span class="text-4xs text-rose-600 font-semibold" x-text="errors.nik"></span></template>
             </div>
             <div class="space-y-1">
@@ -196,15 +196,15 @@
             <div x-show="mengaji === 'Sudah'" x-cloak class="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div class="space-y-1">
                     <label class="text-2xs font-bold text-slate-500 uppercase tracking-wide">Ngaji Di Mana</label>
-                    <input type="text" name="ngaji_dimana" value="{{ old('ngaji_dimana', $s?->ngaji_dimana) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500">
+                    <input type="text" name="ngaji_dimana" :required="mengaji === 'Sudah'" value="{{ old('ngaji_dimana', $s?->ngaji_dimana) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500">
                 </div>
                 <div class="space-y-1">
                     <label class="text-2xs font-bold text-slate-500 uppercase tracking-wide">Metode</label>
-                    <input type="text" name="ngaji_metode" value="{{ old('ngaji_metode', $s?->ngaji_metode) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500">
+                    <input type="text" name="ngaji_metode" :required="mengaji === 'Sudah'" value="{{ old('ngaji_metode', $s?->ngaji_metode) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500">
                 </div>
                 <div class="space-y-1">
                     <label class="text-2xs font-bold text-slate-500 uppercase tracking-wide">Jilid</label>
-                    <input type="text" name="ngaji_jilid" value="{{ old('ngaji_jilid', $s?->ngaji_jilid) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500">
+                    <input type="text" name="ngaji_jilid" :required="mengaji === 'Sudah'" value="{{ old('ngaji_jilid', $s?->ngaji_jilid) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500">
                 </div>
             </div>
         </div>
@@ -223,7 +223,7 @@
                 </div>
                 <div class="space-y-1" x-show="belajar === 'PAUD' || belajar === 'Les'" x-cloak>
                     <label class="text-2xs font-bold text-slate-500 uppercase tracking-wide">Keterangan (nama PAUD / Les)</label>
-                    <input type="text" name="belajar_keterangan" value="{{ old('belajar_keterangan', $s?->belajar_keterangan) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500">
+                    <input type="text" name="belajar_keterangan" :required="belajar === 'PAUD' || belajar === 'Les'" value="{{ old('belajar_keterangan', $s?->belajar_keterangan) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500">
                 </div>
             </div>
         </div>

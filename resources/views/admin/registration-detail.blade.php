@@ -36,15 +36,50 @@
     $ortu = $form->student?->ortu;
     $akun = $form->user;
 
-    // K3.6: alamat keluarga kini di ortu (L1 revisi C10). Bagian kosong dilewati.
-    $g = $ortu;
+    // Alamat keluarga (di ortu, L1 revisi C10) — disisipkan ke card biodata murid.
     $alamatLengkap = collect([
-        $g?->alamat,
-        $g?->kelurahan_nama,
-        $g?->kecamatan_nama,
-        $g?->kota_nama,
-        $g?->provinsi_nama,
+        $ortu?->alamat,
+        $ortu?->kelurahan_nama,
+        $ortu?->kecamatan_nama,
+        $ortu?->kota_nama,
+        $ortu?->provinsi_nama,
     ])->filter()->implode(', ');
+
+    // Daftar field biodata murid (label → nilai). Semua yang diisi di formulir pendaftaran.
+    $rowsMurid = [
+        'Nama Lengkap' => $student?->nama_lengkap,
+        'Nama Panggilan' => $student?->nama_panggilan,
+        'NIK' => $student?->nik,
+        'NISN' => $student?->nisn,
+        'NIS' => $student?->nis,
+        'Jenis Kelamin' => $jenisKelaminLabel[$student?->jenis_kelamin] ?? $student?->jenis_kelamin,
+        'Tempat, Tanggal Lahir' => collect([$student?->tempat_lahir, $student?->tanggal_lahir?->translatedFormat('d F Y')])->filter()->implode(', ') ?: null,
+        'Agama' => $student?->agama,
+        'Anak ke-' => $student?->anak_ke,
+        'Jumlah Saudara' => $student?->jumlah_saudara,
+        'Warga Negara' => $student?->warga_negara,
+        'Bahasa Keseharian' => $student?->bahasa_keseharian,
+        'Kondisi Kesehatan' => $student?->kondisi_kesehatan,
+        'Ukuran Baju' => $student?->ukuran_baju,
+        'Sudah Mengaji' => $student?->sudah_mengaji,
+        'Ngaji Di Mana' => $student?->ngaji_dimana,
+        'Metode Mengaji' => $student?->ngaji_metode,
+        'Jilid' => $student?->ngaji_jilid,
+        'Pernah Belajar' => $student?->pernah_belajar,
+        'Keterangan Belajar' => $student?->belajar_keterangan,
+        'Alamat Keluarga' => $alamatLengkap ?: null,
+    ];
+
+    // Field per orang tua (ayah/ibu) — dibangun via loop di bawah.
+    $ortuField = fn ($p) => [
+        'Nama Lengkap' => $ortu?->{$p.'_nama'},
+        'Tempat, Tanggal Lahir' => collect([$ortu?->{$p.'_tempat_lahir'}, optional($ortu?->{$p.'_tanggal_lahir'})->translatedFormat('d F Y')])->filter()->implode(', ') ?: null,
+        'Agama' => $ortu?->{$p.'_agama'},
+        'Pendidikan Terakhir' => $ortu?->{$p.'_pendidikan'},
+        'Pekerjaan' => $ortu?->{$p.'_pekerjaan'} === 'LAINNYA' ? ($ortu?->{$p.'_pekerjaan_lain'} ?: 'LAINNYA') : $ortu?->{$p.'_pekerjaan'},
+        'Penghasilan Bulanan' => $ortu?->{$p.'_penghasilan'},
+        'No. HP' => $ortu?->{$p.'_no_hp'},
+    ];
 @endphp
 
 <div class="max-w-4xl mx-auto space-y-8">
@@ -159,65 +194,39 @@
         </div>
     </div>
 
-    <!-- Biodata anak & orang tua -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Biodata anak -->
-        <div class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-4">
-            <h3 class="text-base font-bold text-slate-950">Biodata Calon Murid</h3>
-            <dl class="space-y-3 text-xs">
-                <div class="flex justify-between gap-3">
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide">Nama Lengkap</dt>
-                    <dd class="font-bold text-slate-800 text-right">{{ $student?->nama_lengkap ?? '-' }}</dd>
+    <!-- Biodata Calon Murid (full-width, di bawah bukti bayar) -->
+    <div class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-4">
+        <h3 class="text-base font-bold text-slate-950">Biodata Calon Murid</h3>
+        <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3 text-xs">
+            @foreach ($rowsMurid as $label => $nilai)
+                <div class="flex justify-between gap-3 sm:flex-col sm:gap-1">
+                    <dt class="text-slate-400 font-semibold uppercase tracking-wide shrink-0">{{ $label }}</dt>
+                    <dd class="font-bold text-slate-800 text-right sm:text-left break-words">{{ $nilai ?? '-' }}</dd>
                 </div>
-                <div class="flex justify-between gap-3">
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide">Nama Panggilan</dt>
-                    <dd class="font-bold text-slate-800 text-right">{{ $student?->nama_panggilan ?? '-' }}</dd>
-                </div>
-                <div class="flex justify-between gap-3">
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide">NIK</dt>
-                    <dd class="font-bold text-slate-800 text-right">{{ $student?->nik ?? '-' }}</dd>
-                </div>
-                <div class="flex justify-between gap-3">
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide">Tempat Lahir</dt>
-                    <dd class="font-bold text-slate-800 text-right">{{ $student?->tempat_lahir ?? '-' }}</dd>
-                </div>
-                <div class="flex justify-between gap-3">
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide">Tanggal Lahir</dt>
-                    <dd class="font-bold text-slate-800 text-right">{{ $student?->tanggal_lahir?->translatedFormat('d F Y') ?? '-' }}</dd>
-                </div>
-                <div class="flex justify-between gap-3">
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide">Jenis Kelamin</dt>
-                    <dd class="font-bold text-slate-800 text-right">{{ $jenisKelaminLabel[$student?->jenis_kelamin] ?? ($student?->jenis_kelamin ?? '-') }}</dd>
-                </div>
-            </dl>
-        </div>
+            @endforeach
+        </dl>
+    </div>
 
-        <!-- Info orang tua -->
-        <div class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-4">
-            <h3 class="text-base font-bold text-slate-950">Data Orang Tua</h3>
-            <dl class="space-y-3 text-xs">
-                <div class="flex justify-between gap-3">
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide">Nama Orang Tua</dt>
-                    <dd class="font-bold text-slate-800 text-right">{{ $ortu?->namaWali() ?? $akun?->displayName() ?? '-' }}</dd>
-                </div>
-                <div class="flex justify-between gap-3">
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide">Pekerjaan</dt>
-                    <dd class="font-bold text-slate-800 text-right">{{ $ortu?->ibu_pekerjaan ?? $ortu?->ayah_pekerjaan ?? '-' }}</dd>
-                </div>
-                <div class="flex justify-between gap-3">
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide">Email</dt>
-                    <dd class="font-bold text-slate-800 text-right break-all">{{ $akun?->email ?? '-' }}</dd>
-                </div>
-                <div class="flex justify-between gap-3">
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide">No. HP</dt>
-                    <dd class="font-bold text-slate-800 text-right">{{ $ortu?->noHpWali() ?? '-' }}</dd>
-                </div>
-                <div class="flex justify-between gap-3">
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide">Alamat Murid</dt>
-                    <dd class="font-bold text-slate-800 text-right">{{ $alamatLengkap !== '' ? $alamatLengkap : '-' }}</dd>
-                </div>
-            </dl>
-        </div>
+    <!-- Biodata Orang Tua: Ayah & Ibu berdampingan -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        @foreach (['ayah' => 'Biodata Ayah', 'ibu' => 'Biodata Ibu'] as $p => $judul)
+            @php $fields = $ortuField($p); $ada = $ortu?->{'ada_'.$p}; @endphp
+            <div class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-4">
+                <h3 class="text-base font-bold text-slate-950">{{ $judul }}</h3>
+                @if ($ada)
+                    <dl class="space-y-3 text-xs">
+                        @foreach ($fields as $label => $nilai)
+                            <div class="flex justify-between gap-3">
+                                <dt class="text-slate-400 font-semibold uppercase tracking-wide shrink-0">{{ $label }}</dt>
+                                <dd class="font-bold text-slate-800 text-right break-words">{{ $nilai ?? '-' }}</dd>
+                            </div>
+                        @endforeach
+                    </dl>
+                @else
+                    <p class="text-xs text-slate-400 italic">Data {{ $p === 'ayah' ? 'Ayah' : 'Ibu' }} tidak diisi.</p>
+                @endif
+            </div>
+        @endforeach
     </div>
 
     {{--

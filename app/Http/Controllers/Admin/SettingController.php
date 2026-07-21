@@ -145,4 +145,43 @@ class SettingController extends Controller
 
         return back()->with('success', trim(Artisan::output()));
     }
+
+    /**
+     * L2.1: halaman Pengaturan Sistem (NSM, persen refund, TA — pindahan dari Set Pembayaran).
+     */
+    public function system(): View
+    {
+        $settings = [
+            'nsm_sekolah'   => Setting::get('nsm_sekolah', ''),
+            'persen_refund' => (int) Setting::get('persen_refund', 30),
+        ];
+
+        // TA: reuse logic dari index() — cukup kirim variabel yang sama.
+        $taAktif    = \App\Models\AcademicYear::where('is_aktif', true)->first();
+        $taPpdbId   = (int) Setting::get('ta_ppdb', 0);
+        $taPpdb     = $taPpdbId ? \App\Models\AcademicYear::find($taPpdbId) : $taAktif;
+        $prevAktif  = $this->tetanggaTa($taAktif?->tahun, -1);
+        $prevPpdb   = $this->tetanggaTa($taPpdb?->tahun, -1);
+
+        return view('admin.system', compact('settings', 'taAktif', 'taPpdb', 'prevAktif', 'prevPpdb'));
+    }
+
+    /**
+     * L2.1: simpan pengaturan sistem (NSM + persen refund). TA via setAcademicYear() existing.
+     */
+    public function updateSystem(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'nsm_sekolah'   => ['sometimes', 'nullable', 'string', 'max:20'],
+            'persen_refund' => ['sometimes', 'integer', 'min:0', 'max:100'],
+        ]);
+
+        foreach ($data as $key => $value) {
+            Setting::set($key, (string) $value);
+        }
+
+        AuditLogService::record('ubah_setting_sistem', 'Setting', null, $data);
+
+        return back()->with('success', 'Pengaturan sistem berhasil diperbarui.');
+    }
 }

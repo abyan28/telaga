@@ -365,8 +365,12 @@ class AdminGuruViewsTest extends TestCase
         $this->actingAs($admin)->get('/portal/admin/data/students')
             ->assertOk()->assertSee('Siswa Lama Manual')->assertDontSee('PPDB Belum Bayar');
 
-        // Setelah bayar daftar ulang (terbayar>0) → muncul.
+        // L2.1: bayar DU saja (terbayar>0) TIDAK cukup — masih calon, belum tampil di Data Murid.
         \App\Models\ReRegistrationPayment::where('id_student', $ppdb->id_students)->update(['jumlah_terbayar' => 100000, 'status' => 'kurang']);
+        $this->actingAs($admin)->get('/portal/admin/data/students')->assertDontSee('PPDB Belum Bayar');
+
+        // Setelah dapat NIS (resmi jadi murid) → muncul di Data Murid.
+        $ppdb->update(['nis' => '101234567890260001']);
         $this->actingAs($admin)->get('/portal/admin/data/students')->assertSee('PPDB Belum Bayar');
 
         // K5.4: toggle guru → nonaktif, hilang dari list default, muncul di filter nonaktif.
@@ -513,5 +517,52 @@ class AdminGuruViewsTest extends TestCase
         $this->actingAs($admin)->get('/portal/admin/data/students')->assertSee('SISWA AKTIF')->assertDontSee('SISWA KELUAR');
         // ?status=semua: keduanya tampil.
         $this->actingAs($admin)->get('/portal/admin/data/students?status=semua')->assertSee('SISWA AKTIF')->assertSee('SISWA KELUAR');
+    }
+
+    /**
+     * L2.1: alur calon murid — batal (refund) & generate NIS (gated PPDB tutup).
+     */
+    public function test_calon_murid_cancel_and_generate_nis(): void
+    {
+        $admin = $this->admin();
+        $wali = User::create(['username' => 'WaliCalon', 'email' => 'wc@test.id', 'role' => 'ortu', 'password' => Hash::make('x')]);
+        \App\Models\Setting::set('nsm_sekolah', '101234567890');
+        \App\Models\Setting::set('persen_refund', '20'); // denda 20%
+
+        // A lunas (1jt) → refund = 1jt−200k = 800k.
+        // B cicil 500k (denda 200k, di atas denda) → refund = 500k−200k = 300k.
+        $mk = function (string $nama, string $nik, float $bayar) use ($wali): Student {
+            $s = Student::create([
+                'id_academic_year' => $this->ta->id_academic_years, 'nik' => $nik,
+                'nama_lengkap' => $nama, 'jenis_kelamin' => 'L', 'tempat_lahir' => 'X',
+                'tanggal_lahir' => '2020-01-01', 'status' => 'aktif',
+            ]);
+            RegistrationForm::create(['id_user' => $wali->id_users, 'id_student' => $s->id_students, 'id_academic_year' => $this->ta->id_academic_years, 'status' => 'lulus']);
+            \App\Models\ReRegistrationPayment::create(['id_student' => $s->id_students, 'id_academic_year' => $this->ta->id_academic_years, 'total_biaya' => 1000000, 'jumlah_terbayar' => $bayar, 'status' => 'kurang']);
+            return $s;
+        };
+        $a = $mk('AAA CALON', '3400000000009001', 1000000);
+        $b = $mk('BBB CALON', '3400000000009002', 500000);
+
+        // Halaman calon murid tampil keduanya.
+        $this->actingAs($admin)->get('/portal/admin/calon-murid')->assertOk()->assertSee('AAA CALON')->assertSee('BBB CALON');
+
+        // Batal A (lunas 1jt, denda 200k → refund 800k tercatat).
+        $this->actingAs($admin)->post("/portal/admin/calon-murid/{$a->slug}/cancel")->assertRedirect();
+        $this->assertDatabaseHas('registration_forms', ['id_student' => $a->id_students, 'status' => 'dibatalkan']);
+        $this->assertDatabaseHas('payment_transactions', ['id_student' => $a->id_students, 'jenis' => 'refund', 'jumlah' => 800000]);
+
+        // Generate NIS gagal saat PPDB masih buka.
+        $this->actingAs($admin)->post('/portal/admin/calon-murid/generate-nis')->assertSessionHasErrors('nis');
+
+        // Tutup PPDB → generate NIS untuk sisa calon (B). Format NSM+YY+urut.
+        \App\Models\Setting::set('pendaftaran_dibuka', '0');
+        $this->actingAs($admin)->post('/portal/admin/calon-murid/generate-nis')->assertRedirect();
+        $this->assertSame('101234567890' . '26' . '001', $b->fresh()->nis);
+        $this->assertSame('aktif', $b->fresh()->status);
+
+        // B kini resmi di Data Murid; halaman calon murid kosong dari B.
+        $this->actingAs($admin)->get('/portal/admin/data/students')->assertSee('BBB CALON');
+        $this->actingAs($admin)->get('/portal/admin/calon-murid')->assertDontSee('BBB CALON');
     }
 }

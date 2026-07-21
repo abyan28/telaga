@@ -45,6 +45,7 @@ return new class extends Migration
                 'diproses_seleksi',         // berkas lengkap -> proses seleksi
                 'lulus',
                 'gagal',
+                'dibatalkan',               // L2.1: batal setelah lulus (pembatalan DU)
             ])->default('submitted');
 
             $table->text('catatan_admin')->nullable();  // Catatan admin (mis. alasan tolak/perbaikan)

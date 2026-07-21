@@ -140,11 +140,15 @@
                     </div>
                     <div class="space-y-1">
                         <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">NIK (16 digit)</label>
-                        <input type="text" name="nik" x-model="f.nik" inputmode="numeric" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
+                        <input type="text" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" x-model="f.nik"  required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
                     </div>
                     <div class="space-y-1">
                         <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">NISN (10 digit, opsional)</label>
-                        <input type="text" name="nisn" x-model="f.nisn" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
+                        <input type="text" name="nisn" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" x-model="f.nisn"  class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">NIS (15-18 digit, opsional)</label>
+                        <input type="text" name="nis" inputmode="numeric" pattern="[0-9]{15,18}" maxlength="18" x-model="f.nis" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
                     </div>
                     <div class="space-y-1">
                         <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Jenis Kelamin</label>
@@ -242,6 +246,12 @@
                             @endforeach
                         </select>
                     </div>
+                    {{-- L8.1: no HP ortu (mode tambah). Isi → auto-buat akun ortu (username=NIK, password=NIK anak, paksa ganti). Kosong → akun via T9.1 nanti. --}}
+                    <template x-if="mode === 'create'"><div class="space-y-1 col-span-2">
+                        <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">No. HP Orang Tua (opsional — buat akun login otomatis)</label>
+                        <input type="text" name="no_hp_ortu" inputmode="numeric" pattern="[0-9]{9,14}" x-model="f.no_hp_ortu" placeholder="Kosongkan bila belum ada" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
+                        <p class="text-4xs text-slate-400">Diisi → akun orang tua dibuat (login &amp; sandi awal = NIK anak, wajib ganti saat login). No. HP tersimpan sebagai kontak Ibu.</p>
+                    </div></template>
                 </div>
 
                 <div class="flex space-x-3 pt-2">
@@ -268,7 +278,7 @@
                 </div>
                 <div class="space-y-1">
                     <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">No. HP Orang Tua</label>
-                    <input type="text" name="no_hp" required inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500">
+                    <input type="text" name="no_hp" inputmode="numeric" pattern="[0-9]{9,14}" required  class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-emerald-500">
                 </div>
                 <div class="flex space-x-3 pt-2">
                     <button type="button" @click="waliOpen = false" class="flex-1 py-3 border border-slate-200 hover:bg-slate-50 font-bold rounded-xl text-xs text-slate-600">Batal</button>
@@ -282,10 +292,10 @@
 <script>
     // State modal CRUD murid: satu form dipakai untuk tambah & edit (T5.2).
     function studentCrud() {
-        const blank = { nama_lengkap: '', nama_panggilan: '', nik: '', nisn: '', jenis_kelamin: 'L', tempat_lahir: '', tanggal_lahir: '', id_class: '', status: 'aktif',
+        const blank = { nama_lengkap: '', nama_panggilan: '', nik: '', nisn: '', nis: '', jenis_kelamin: 'L', tempat_lahir: '', tanggal_lahir: '', id_class: '', status: 'aktif',
             agama: 'ISLAM', anak_ke: '', jumlah_saudara: '', warga_negara: 'INDONESIA', bahasa_keseharian: '', kondisi_kesehatan: '',
             sudah_mengaji: '', ngaji_dimana: '', ngaji_metode: '', ngaji_jilid: '',
-            pernah_belajar: '', belajar_keterangan: '', ukuran_baju: '', foto_path: '' };
+            pernah_belajar: '', belajar_keterangan: '', ukuran_baju: '', foto_path: '', no_hp_ortu: '' };
         return {
             open: false, mode: 'create', action: '{{ route('admin.students.store') }}', f: { ...blank },
             openCreate() {

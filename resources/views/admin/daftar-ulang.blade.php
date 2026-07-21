@@ -21,7 +21,7 @@
     {{-- Tab bar --}}
     <div class="flex gap-2 border-b border-slate-100">
         <button @click="setTab('siswa')" :class="tab === 'siswa' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'"
-                class="px-4 py-3 border-b-2 font-bold text-xs transition-colors">List Murid</button>
+                class="px-4 py-3 border-b-2 font-bold text-xs transition-colors">Histori Pembayaran</button>
         <button @click="setTab('bukti')" :class="tab === 'bukti' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'"
                 class="inline-flex items-center gap-2 px-4 py-3 border-b-2 font-bold text-xs transition-colors">
             Bukti Pembayaran

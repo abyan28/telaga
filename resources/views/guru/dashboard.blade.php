@@ -72,11 +72,15 @@
                         </div>
                         <div class="space-y-1">
                             <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">NIK (16 digit)</label>
-                            <input type="text" name="nik" inputmode="numeric" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
+                            <input type="text" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16"  required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
                         </div>
                         <div class="space-y-1">
                             <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">NISN (opsional)</label>
-                            <input type="text" name="nisn" inputmode="numeric" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
+                            <input type="text" name="nisn" inputmode="numeric" pattern="[0-9]{10}" maxlength="10"  class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">NIS (15-18 digit, opsional)</label>
+                            <input type="text" name="nis" inputmode="numeric" pattern="[0-9]{15,18}" maxlength="18" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
                         </div>
                         <div class="space-y-1">
                             <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Jenis Kelamin</label>

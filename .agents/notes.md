@@ -544,6 +544,27 @@ Dikelompokkan per tema. Prioritas kasar: BUG dulu → validasi → UX → fitur 
           (2) composer classmap + bootstrap alias cache kelas lama→wajib `php composer.phar dump-autoload`;
           (3) label regex \bwali\b→"orang tua" merusak $wali var PHP di blade (jadi "$orang tua"=syntax error)
           & menabrak 2 var beda (registration-detail: $guardian vs $wali→$ortu vs $akun). 125 passed, build ✓.
+        - [FIX] [DONE 2026-07-21] Sidebar CMS ortu KOSONG pasca-rename. Root cause: role DB='ortu' tapi
+          layouts/dashboard.blade cek `$activeRole === 'orang tua'` (label lama) → blok menu tak pernah render.
+          Ada 2 blok (desktop L70 + mobile L320) + accounts.blade filter option value & badge array key masih
+          'orang tua'. Fix semua → 'ortu'. CMS admin & guru dicek: aman (role 'admin'/'guru' tak berubah).
+        - [FIX] [DONE 2026-07-21] Validasi WAJIB client form daftar murid: (1) step-1 13 field L1.2 baru tak
+          ke-validate (validateStep(1) lama cuma cek 4 field) → generic loop querySelectorAll('[required]') di
+          $refs.step1 + attr `required` di tiap input wajib + banner error. (2) cabang required_if belum ada
+          :required client: ngaji_dimana/ngaji_metode/ngaji_jilid `:required="mengaji === 'Sudah'"`,
+          belajar_keterangan `:required="belajar === 'PAUD' || belajar === 'Les'"`, pekerjaan_lain
+          `:required` + server `required_if`. Server-side required_if SUDAH ada di Student::profilRules().
+        - [FIX] [DONE 2026-07-21] Input numerik-only (no_hp/nik/nisn/nis/nuptk) di 10 blade: `inputmode="numeric"
+          pattern="[0-9]{N}"` + maxlength. PLUS 1 delegated handler di layouts/dashboard.blade footer (dipakai
+          semua CMS): keydown preventDefault non-digit + input event strip paste/drag. type="number" SENGAJA
+          dihindari (stepper arrows + rusak leading-zero). PITFALL: sed nambah attr dobel (inputmode/maxlength)
+          bila input sudah punya — cek & strip dup setelah pass; sed \\d escaping rusak → patch manual.
+        - [DONE 2026-07-21] Kolom NIS (Nomor Induk Sekolah) students: migration add_nis_to_students (string 18,
+          nullable, unique), fillable, `digits_between:15,18` unique di MasterData+Guru store/update, UppercaseInput
+          skip. Field NIS di form tambah/edit admin (Alpine studentCrud: WAJIB tambah 'nis' di `blank`!) + guru.
+          Form ortu (register) TAK punya NIS — diberikan sekolah setelah diterima.
+        - [DONE 2026-07-21] Git init + push GitHub github.com/abyan28/telaga (initial commit 220 file).
+          git config user set lokal (dev@telaga.sch.id). Update: git add -A && commit && push.
         - [L1.1] [DONE 2026-07-21] Profil ortu → pisah Ayah & Ibu (flat kolom ayah_*/ibu_* + checkbox ada_*).
           Kolom lama guardians (nama/no_hp/pekerjaan/ttl) DIHAPUS. namaWali()/noHpWali() default ibu→ayah.
           Alamat PINDAH students→guardians (1 set, balik C10). SELESAI penuh: 9b (RegistrationController search
@@ -565,10 +586,23 @@ Dikelompokkan per tema. Prioritas kasar: BUG dulu → validasi → UX → fitur 
           identifier kode ($student/id_students/nama_lengkap). Script mask+regex word-boundary. 125 passed, build ✓.
 
     L2. Alur PPDB & status murid
-        - [L2.1] Halaman Calon Siswa (tab PPDB—Daftar Ulang, SEBELUM List Siswa): datatable calon yg sudah bayar DU (sebagian/lunas).
+        - [L2.1] [DONE 2026-07-21] Halaman Calon Murid (tab PPDB—Daftar Ulang, SEBELUM List Siswa): datatable calon yg sudah bayar DU (sebagian/lunas).
           Aksi batal-kelulusan → refund 70% (lunas 1jt→refund 700k; cicil→wajib lunas dulu, verifikasi, baru blokir akun bila tak ada
           anak aktif). Generate NIS (NSM+tahun2digit+urut abjad, mis. 123456789012+26+001) → resmi masuk Data Siswa, Calon Siswa kosong.
           % refund = setting di Set Pembayaran; NSM diinput admin di halaman ini.
+          (IMPLEMENTASI FINAL: refund = max(0, terbayar − denda), denda = (100−persen_refund)% × total DU.
+          persen_refund default 70 → denda 30%. Contoh bayar 500k dari 1jt → refund 200k; bayar 1jt → refund 700k;
+          bayar <30% → form=dibatalkan, akun ortu TAK terblokir sampai lunasi 30% (gate login). Batal HANYA di CMS admin
+          (tombol per-baris, tak ada di CMS ortu). Terbayar<denda → tombol batal diganti teks "Lunasi Rp X dulu".
+          Generate NIS: GATE ppdb tutup + NSM 12 digit; sort abjad nama; nis=NSM+YY(TA PPDB)+urut3; status→aktif.
+          Halaman: RegistrationController@calonMurid/cancelCalon/generateNis; route admin.calon-murid(.cancel/.generate-nis);
+          view admin/calon-murid.blade (kolom NIS setelah Orang Tua). NSM+persen_refund pindah ke Pengaturan Sistem (tab
+          baru sidebar bawah Konten Web: SettingController@system/updateSystem, view admin/system.blade, 3 sub-tab
+          NSM/Refund/Tahun Ajaran — TA DIPINDAH dari Set Pembayaran). enum +refund (payment_transactions.jenis) +dibatalkan
+          (registration_forms.status): ditambah di migrasi CREATE (fresh SQLite+MySQL) + migrasi ALTER MySQL-only utk DB live;
+          bukti_path jadi nullable (refund tanpa bukti). Data Murid syarat K5.1 GANTI: PPDB tampil bila nis NOT NULL (bukan
+          terbayar>0). Gate login ortu (AuthController): PPDB tutup + tak ada anak aktif/lulus-calon/dibatalkan-utang-denda → blokir;
+          PPDB buka → gate mati → akun hidup lagi. Dashboard Keuangan Masuk exclude jenis refund. 126 test passed, build ✓.)
         - [L2.2] [DONE 2026-07-20] PPDB ditutup + belum bayar DU sama sekali → blok upload bukti + batalkan status lulus.
           RegistrationForm: method cancelLulusIfPpdbClosedAndUnpaid() (DRY; lazy cancel saat load payment/status oleh wali).
           Guard server: PaymentController@store tolak upload DU bila PPDB tutup & jumlah_terbayar=0. UI: flag 'terkunci' di
@@ -625,12 +659,22 @@ Dikelompokkan per tema. Prioritas kasar: BUG dulu → validasi → UX → fitur 
     L6. Hapus fitur
         - [L6.1] [DONE 2026-07-20] Hapus fitur catatan siswa oleh guru (SEMENTARA — tabel/model StudentProgressNote
           dibiarkan). Buang route guru.students.notes, storeNote, eager progressNotes, UI modal+tab wali/guru.
+        - [L6.2] [DONE 2026-07-22] Biodata lengkap di halaman Detail & Verifikasi Pendaftaran. Card setelah bukti
+          bayar: Biodata Calon Murid (full-width, SEMUA field form pendaftaran + NIS + alamat keluarga). Di bawahnya
+          2 card berdampingan: Biodata Ayah & Biodata Ibu (masing-masing nama, TTL, agama, pendidikan, pekerjaan
+          +lainnya, penghasilan, no HP). view:cache + 21 admin test hijau.
 
     L7. Data dummy
         - [L7.1] ~100 data dummy semua tabel (tunggu L1 stabil).
 
     L8. Import / export (diskusi)
-        - [L8.1] Import siswa lama via CSV (validasi format; alamat dilengkapi wali). DISKUSI.
+        - [L8.1] [SEBAGIAN 2026-07-22] Auto-akun ortu saat input murid lama SELESAI (prasyarat import CSV).
+          Form Tambah Murid (admin) +field "No. HP Orang Tua" mode create. Diisi → MasterDataController::linkOrtu()
+          buat/tautkan akun: username=no_hp, password=NIK anak, must_change_password, no_hp→ibu_no_hp. Merge kakak-adik
+          by users.no_hp (1 akun, sandi=NIK kakak, tak berubah). Kosong → murid saja. linkOrtu dipakai bareng
+          createOrtuAccount (T9.1) — buang duplikasi. KEPUTUSAN kredensial: password=NIK anak (bukan no_hp — no_hp bocor
+          di grup WA ortu; NIK tak dihafal/tak berformat lebih aman). NISN/NIS ditolak (publik/ketebak). Test WaliAccountTest
+          x2 (add_student_with_ortu_hp + assert password=NIK). SISA L8.1: import CSV massal ratusan murid lama BELUM.
         - [L8.2] Export CSV/PDF data siswa + laporan keuangan SPP dg filter (kelas/TA/status/baru; per-siswa/ortu/bulan/periode).
 
     L9. Deploy / email (blocked SMTP)

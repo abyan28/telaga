@@ -59,12 +59,12 @@ class MasterDataController extends Controller
             $q->where('status', $status);
         }
 
-        // K5.1: siswa hasil PPDB (punya formulir pendaftaran) baru muncul di Data
-        // Siswa SETELAH ada pembayaran daftar ulang (nominal berapapun → terbayar>0).
+        // L2.1: siswa hasil PPDB (punya formulir pendaftaran) baru RESMI masuk Data
+        // Murid setelah dapat NIS (generate). Belum ber-NIS = masih calon (tab Calon Murid).
         // Siswa lama manual (tanpa formulir) tampil apa adanya.
         $q->where(fn ($w) => $w
             ->whereDoesntHave('registrationForms')
-            ->orWhereHas('reRegistrationPayments', fn ($r) => $r->where('jumlah_terbayar', '>', 0)));
+            ->orWhereNotNull('nis'));
 
         $students = $q->orderBy('nama_lengkap')->paginate(25)->withQueryString();
         $classes = SchoolClass::orderBy('nama_kelas')->get();
@@ -157,15 +157,18 @@ class MasterDataController extends Controller
     {
         $nik = Rule::unique('students', 'nik');
         $nisn = Rule::unique('students', 'nisn');
+        $nis = Rule::unique('students', 'nis');
         if ($ignoreId) {
             $nik->ignore($ignoreId, 'id_students');
             $nisn->ignore($ignoreId, 'id_students');
+            $nis->ignore($ignoreId, 'id_students');
         }
 
-        // L1.2: profil murid DRY dari Student::profilRules(); override nik unique + nisn/kelas/status.
+        // L1.2: profil murid DRY dari Student::profilRules(); override nik unique + nisn/nis/kelas/status.
         $rules = Student::profilRules();
         $rules['nik'] = ['required', 'digits:16', $nik];
         $rules['nisn'] = ['nullable', 'digits:10', $nisn];
+        $rules['nis'] = ['nullable', 'digits_between:15,18', $nis];
         $rules['id_class'] = ['nullable', 'exists:classes,id_classes'];
         $rules['status'] = ['required', 'in:aktif,lulus,nonaktif'];
 
@@ -179,15 +182,19 @@ class MasterDataController extends Controller
     {
         $data = $request->validate($this->studentRules() + [
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'no_hp_ortu' => ['nullable', ...ValidationRules::noHp(false)], // L8.1: opsional; isi → buat akun ortu
         ], [
             ...ValidationRules::messages(),
             'nik.digits' => 'NIK harus tepat 16 digit angka.',
             'nik.unique' => 'NIK ini sudah terdaftar.',
             'nisn.digits' => 'NISN harus tepat 10 digit angka.',
             'nisn.unique' => 'NISN ini sudah terdaftar.',
+            'nis.digits_between' => 'NIS harus 15-18 digit angka.',
+            'nis.unique' => 'NIS ini sudah terdaftar.',
         ]);
         $data['id_academic_year'] = AcademicYear::where('is_aktif', true)->value('id_academic_years');
         $data['nisn'] = $data['nisn'] ?? null;
+        $data['nis'] = $data['nis'] ?? null;
         $foto = $request->file('foto'); // simpan setelah create agar folder pakai PK (nama kembar)
         unset($data['foto']);
 
@@ -196,9 +203,43 @@ class MasterDataController extends Controller
         if ($foto) {
             $student->update(['foto_path' => $uploader->storeProfilePhoto($foto, 'siswa', $data['nama_lengkap'], $student->id_students)]);
         }
+        // L8.1: no HP ortu diisi → buat/tautkan akun ortu (username & sandi awal = NIK anak).
+        if ($noHpOrtu = ValidationRules::normalizeNoHp((string) $request->input('no_hp_ortu'))) {
+            $this->linkOrtu($student, $noHpOrtu);
+        }
         AuditLogService::record('tambah_siswa', 'Student', null, ['nik' => $data['nik']]);
 
-        return back()->with('success', 'Data murid berhasil ditambahkan.');
+        return back()->with('success', 'Data murid berhasil ditambahkan.'
+            .($noHpOrtu ? ' Akun orang tua dibuat (login & sandi awal = NIK anak).' : ''));
+    }
+
+    /**
+     * L8.1/T9.1: buat atau tautkan akun ortu ke siswa. Merge kakak-adik by users.no_hp
+     * (nomor sama → 1 akun; password tak diubah). Akun baru: username=no_hp, password=NIK
+     * anak, must_change_password. no_hp disimpan sebagai kontak Ibu.
+     */
+    private function linkOrtu(Student $student, string $noHp, ?string $namaIbu = null): void
+    {
+        DB::transaction(function () use ($student, $noHp, $namaIbu) {
+            $ortu = OrangTua::whereHas('user', fn ($q) => $q->where('no_hp', $noHp))->first();
+
+            if (! $ortu) {
+                $user = User::create([
+                    'username' => $noHp,
+                    'no_hp' => $noHp,
+                    'role' => 'ortu',
+                    'password' => Hash::make($student->nik), // sandi awal = NIK anak (kakak bila kakak-adik)
+                    'must_change_password' => true,
+                ]);
+                $ortu = OrangTua::create([
+                    'id_user' => $user->id_users,
+                    'ada_ayah' => false, 'ada_ibu' => true,
+                    'ibu_nama' => $namaIbu, 'ibu_no_hp' => $noHp,
+                ]);
+            }
+
+            $student->update(['id_parent' => $ortu->id_parents]);
+        });
     }
 
     /**
@@ -212,8 +253,11 @@ class MasterDataController extends Controller
             ...ValidationRules::messages(),
             'nik.unique' => 'NIK ini sudah terdaftar.',
             'nisn.unique' => 'NISN ini sudah terdaftar.',
+            'nis.unique' => 'NIS ini sudah terdaftar.',
+            'nis.digits_between' => 'NIS harus 15-18 digit angka.',
         ]);
         $data['nisn'] = $data['nisn'] ?? null;
+        $data['nis'] = $data['nis'] ?? null;
         // Ganti foto (hapus lama agar tak menyampah); kosong = pertahankan foto lama.
         if ($request->hasFile('foto')) {
             if ($student->foto_path) {
@@ -248,33 +292,11 @@ class MasterDataController extends Controller
             return back()->withErrors(['no_hp' => 'Murid ini sudah tertaut ke akun orang tua.']);
         }
 
-        DB::transaction(function () use ($data, $student) {
-            // Cari wali by no_hp; buat akun+profil bila belum ada (kakak-adik → 1 akun).
-            // Lookup: users.no_hp (bukan parents — kolom parents.no_hp sudah dihapus).
-            $ortu = OrangTua::whereHas('user', fn ($q) => $q->where('no_hp', $data['no_hp']))->first();
-
-            if (! $ortu) {
-                $user = User::create([
-                    'username' => $data['no_hp'],
-                    'no_hp' => $data['no_hp'],
-                    'role' => 'ortu',
-                    'password' => Hash::make($data['no_hp']),
-                    'must_change_password' => true,
-                ]);
-                // L1.1: minimal ortu — default ibu (isi profil lengkap via wali.profile gate).
-                $ortu = OrangTua::create([
-                    'id_user' => $user->id_users,
-                    'ada_ayah' => false, 'ada_ibu' => true,
-                    'ibu_nama' => $data['nama'], 'ibu_no_hp' => $data['no_hp'],
-                ]);
-            }
-
-            $student->update(['id_parent' => $ortu->id_parents]);
-        });
+        $this->linkOrtu($student, $data['no_hp'], $data['nama']);
 
         AuditLogService::record('buat_akun_wali', 'Student#'.$student->id_students, null, ['no_hp' => $data['no_hp']]);
 
-        return back()->with('success', 'Akun orang tua dibuat/ditautkan. Login & password awal = No. HP orang tua.');
+        return back()->with('success', 'Akun orang tua dibuat/ditautkan. Login = No. HP, sandi awal = NIK anak.');
     }
 
     /**

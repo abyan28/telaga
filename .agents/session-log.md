@@ -1,7 +1,37 @@
 # Session Log — TELAGA AL KAUTSAR
 
 > Dokumen konteks untuk sesi Hermes/agent BARU. Baca ini + `tasklist.md` dulu sebelum kerja.
-> Terakhir diperbarui: 2026-07-21 (Sesi L1.1+L1.2 — **SELESAI 100%** — 125 test passed, build ✓)
+> Terakhir diperbarui: 2026-07-22 (Sesi L6.2 + L2.1 + L8.1-akun-ortu — **SELESAI** — 127 test passed, build ✓)
+>
+> ## Sesi 2026-07-22 — Biodata detail (L6.2) + Calon Murid/NIS (L2.1) + auto-akun ortu (L8.1)
+> Semua verified: 127 test passed (502), npm run build ✓, migrate:fresh --seed ✓.
+> 1. **L6.2 Biodata lengkap** di admin/registration-detail. Card full-width Biodata Calon Murid (SEMUA field form pendaftaran + NIS + alamat keluarga, grid 3 kol) → 2 card berdampingan Biodata Ayah + Biodata Ibu (nama/TTL/agama/pendidikan/pekerjaan+lain/penghasilan/no HP; "tidak diisi" bila ada_*=false). Pure view, nol backend.
+> 2. **L2.1 Calon Murid + NIS + Batal.** Halaman admin.calon-murid (sub-menu PPDB dropdown, setelah Daftar Ulang): datatable siswa lulus+bayarDU>0+nis null, kolom NIS setelah Orang Tua.
+>    - **Generate NIS** (batch, gate PPDB tutup + NSM 12 digit): sort abjad nama → nis=NSM+YY(TA PPDB)+urut3, status→aktif. 1 POST.
+>    - **Batal** per-baris: refund = max(0, terbayar − denda), denda = persen_refund% × total DU. Terbayar<denda → tombol jadi teks "Lunasi Rp X dulu". Catat PaymentTransaction jenis=refund (bukti_path nullable). form→dibatalkan, siswa→nonaktif.
+>    - **persen_refund = persen DENDA langsung** (bukan 100−x). Default 30. Set di Pengaturan Sistem.
+> 3. **Pengaturan Sistem** (tab sidebar BARU < Konten Web, desktop+mobile): admin.system, 3 sub-tab NSM / Refund% / Tahun Ajaran (TA DIPINDAH dari Set Pembayaran). SettingController@system/updateSystem.
+> 4. **Data Murid syarat baru** (ganti K5.1): siswa PPDB tampil di Data Murid HANYA bila `nis IS NOT NULL` (bukan lagi terbayar>0). Calon belum ber-NIS = di tab Calon Murid saja. Siswa lama manual (tanpa form) tetap tampil.
+> 5. **Gate login ortu** (AuthController): PPDB tutup + tak ada anak aktif/lulus-calon/dibatalkan-utang-denda → blokir. PPDB buka → gate mati → akun hidup lagi. Nol kolom flag baru.
+> 6. **Dashboard Keuangan Masuk** exclude jenis=refund.
+> 7. **Enum baru**: payment_transactions.jenis +refund; registration_forms.status +dibatalkan; bukti_path→nullable. Ditambah di migrasi CREATE (fresh SQLite+MySQL) + migrasi ALTER MySQL-only utk DB live (SQLite skip — tak support MODIFY COLUMN).
+> 8. **L8.1 auto-akun ortu saat input murid lama.** Form Tambah Murid +field "No. HP Orang Tua" (mode create). Diisi → helper `MasterDataController::linkOrtu()` buat/tautkan akun: username=no_hp, **password=NIK anak** (kakak bila kakak-adik), must_change_password, no_hp→kontak Ibu. Merge kakak-adik by users.no_hp (nomor sama → 1 akun, sandi tak berubah). Kosong → murid saja (akun via T9.1 nanti). `linkOrtu` dipakai bareng storeStudent + createOrtuAccount (buang duplikasi ~20 baris). KEPUTUSAN kredensial: no_hp=username OK (identifier, must_change) TAPI password pakai NIK anak — NIK tak dihafal/tak berformat, lebih aman dari no_hp (bocor di grup WA ortu). NIK/NISN/NIS sebagai username DITOLAK konsisten (identifier publik/ketebak).
+>
+> ---
+>
+> ## Sesi 2026-07-21b — RENAME guardian→ortu + fix pasca-rename (ponytail)
+> Semua verified: 125 test passed (479), npm run build ✓. Repo di-push ke github.com/abyan28/telaga (initial commit).
+> 1. **Rename `ppdb_ta_target`→`ta_ppdb`** + method `ppdbTarget()`→`taPpdb()` (semantik: "target"=goal, keliru). Setting key, controller var, blade label "Target PPDB"→"Tahun Ajaran PPDB". DB key nol row (belum diset live).
+> 2. **Fix fallback TA PPDB**: view registrations pakai `$tahunBerikutnya` (TA+1) saat null, model `taPpdb()` fallback TA aktif → beda. Seragamkan: view pakai `AcademicYear::taPpdb()`, buang `$tahunBerikutnya` dead code.
+> 3. **RENAME BESAR guardian→ortu** (detail lengkap di rules §1.5/1.6, C4, memory). Tabel guardians→parents, Model OrangTua (Parent=PHP reserved), relasi ortu(), role wali→ortu, route+view dir wali→ortu, middleware RequireOrtuProfile. Helper namaWali()/noHpWali() TETAP.
+> 4. **Fix sidebar role ortu**: rename bikin role DB='ortu' tapi sidebar cek `=== 'orang tua'` (label lama) → menu kosong. 2 blok (desktop+mobile) + accounts filter/badge key. Admin/guru tak terdampak.
+> 5. **Validasi client form**: (a) step-1 daftar murid — 13 field L1.2 baru tak ke-validate → `[required]` + loop `querySelectorAll` di validateStep(1); (b) pekerjaan_lain `required_if:LAINNYA` (server+`:required`); (c) cabang mengaji/belajar `:required` ikut state.
+> 6. **Input numerik-only** (no_hp/nik/nisn/nis/nuptk): `inputmode="numeric" pattern` di 10 blade + 1 delegated handler di layout footer (keydown block + input strip paste). Server-side `digits`/`regex` sudah ada.
+> 7. **Kolom NIS** (students, 15-18 digit, nullable unique): migration + fillable + validasi `digits_between:15,18` di MasterData+Guru store/update + field di form tambah/edit admin (Alpine f.nis) & guru.
+>
+> ---
+>
+> Terakhir diperbarui sebelumnya: 2026-07-21 (Sesi L1.1+L1.2 — **SELESAI 100%** — 125 test passed, build ✓)
 > - PENGERJAAN L1.1+L1.2 (1 paket — Q8). YANG SELESAI (~95%):
 >   * Migration (2), Models (Guardian/Student/User), TestCase helper
 >   * Wali DashboardController updateProfile + wali/profile.blade (2 sub-form Ayah/Ibu + checkbox Ada + _alamat-picker).
@@ -198,7 +228,7 @@ Sistem Informasi Sekolah **RA Al Kautsar**, nama aplikasi **"TELAGA AL KAUTSAR"*
   - Audit [SELESAI] P1.2 (tabel cache/jobs — diputuskan jangan hapus), T3.1 (eager-load — 1 N+1 diperbaiki).
   - SISA backlog belum dikerjakan: T1.1/T1.2/T1.3 (verifikasi email + lupa sandi — nyerempet deploy 3.C butuh SMTP asli).
     (T2.1/T2.4/T7.1/T9.1 SUDAH selesai.)
-- Test: `php artisan test` = 125 passed (481 assertions). Verify: `npm run build`.
+- Test: `php artisan test` = **127 passed (502 assertions)**. Verify: `npm run build`.
 
 
 ## Lingkungan (WINDOWS — quirk penting, hemat waktu)

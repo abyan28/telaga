@@ -19,7 +19,7 @@ class Student extends Model
 
     protected $fillable = [
         'id_parent', 'id_class', 'id_academic_year',
-        'nik', 'nisn', 'nama_lengkap', 'nama_panggilan', 'foto_path',
+        'nik', 'nisn', 'nis', 'nama_lengkap', 'nama_panggilan', 'foto_path',
         'jenis_kelamin', 'agama', 'anak_ke', 'jumlah_saudara',
         'warga_negara', 'bahasa_keseharian', 'kondisi_kesehatan',
         'sudah_mengaji', 'ngaji_dimana', 'ngaji_metode', 'ngaji_jilid',

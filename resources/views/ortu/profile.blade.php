@@ -91,7 +91,7 @@
                         </div>
                         <div class="space-y-1">
                             <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">No. HP</label>
-                            <input type="text" name="{{ $p }}_no_hp" inputmode="numeric" value="{{ $v($p.'_no_hp') }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500">
+                            <input type="text" name="{{ $p }}_no_hp" inputmode="numeric" pattern="[0-9]{9,14}" value="{{ $v($p.'_no_hp') }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500">
                         </div>
                     </div>
                 </div>

@@ -142,12 +142,12 @@
                     </div>
                     <div class="space-y-1">
                         <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">NUPTK</label>
-                        <input type="text" name="nuptk" x-model="f.nuptk" required inputmode="numeric" maxlength="16" pattern="\d{16}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
+                        <input type="text" name="nuptk" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" x-model="f.nuptk" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
                         <span class="text-4xs text-slate-400 block" x-show="mode === 'create'">* Password awal = NUPTK.</span>
                     </div>
                     <div class="space-y-1">
                         <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">No. HP</label>
-                        <input type="text" name="no_hp" x-model="f.no_hp" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
+                        <input type="text" name="no_hp" inputmode="numeric" pattern="[0-9]{9,14}" x-model="f.no_hp" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
                         <span class="text-4xs text-slate-400 block" x-show="mode === 'create'">* Dipakai untuk login guru.</span>
                     </div>
                     <div class="space-y-1">

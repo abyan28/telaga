@@ -13,10 +13,8 @@
     ];
 @endphp
 
-{{-- Slidebar/tab: Nominal → Rekening → Generate SPP. Modal navigasi TA (L2.4) ikut root ini. --}}
-<div class="max-w-2xl mx-auto space-y-8"
-     x-data="Object.assign(hashTabs('nominal'), { modal: null, tujuan: '', scope: '', arah: '',
-        buka(s, a, t) { this.scope = s; this.arah = a; this.tujuan = t; this.modal = true; } })">
+{{-- Tab: Nominal → Rekening → Generate SPP. --}}
+<div class="max-w-2xl mx-auto space-y-8" x-data="hashTabs('nominal')">
 
     @if (session('success'))
         <div class="bg-emerald-50 border border-emerald-100 text-emerald-800 rounded-2xl px-5 py-3 text-xs font-semibold">{{ session('success') }}</div>
@@ -33,8 +31,6 @@
                 class="whitespace-nowrap px-4 py-3 border-b-2 font-bold text-xs transition-colors">Rekening Bank Sekolah</button>
         <button @click="setTab('generate')" :class="tab === 'generate' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'"
                 class="whitespace-nowrap px-4 py-3 border-b-2 font-bold text-xs transition-colors">Generate SPP</button>
-        <button @click="setTab('tahun')" :class="tab === 'tahun' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'"
-                class="whitespace-nowrap px-4 py-3 border-b-2 font-bold text-xs transition-colors">Tahun Ajaran</button>
     </div>
 
     {{-- Tab: Nominal biaya — dropdown pilih 1 field, hanya yang dipilih tersimpan --}}
@@ -103,64 +99,6 @@
             @csrf
             <button type="submit" class="px-5 py-2.5 border border-indigo-200 hover:bg-indigo-50 text-indigo-600 font-bold rounded-xl text-xs transition-colors">Generate Sekarang</button>
         </form>
-    </div>
-
-    {{-- Tab: navigasi Tahun Ajaran (L2.4) — 2 kontrol INDEPENDEN (sistem vs PPDB), masing-masing < > --}}
-    <div x-show="tab === 'tahun'" x-cloak class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-5">
-        <div>
-            <h3 class="text-base font-bold text-slate-950">Tahun Ajaran</h3>
-            <p class="text-xs text-slate-400 leading-normal mt-1">TA Sistem & TA PPDB independen — geser masing-masing dengan panah.</p>
-        </div>
-        <div class="flex items-center justify-between gap-3">
-            <div>
-                <span class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Tahun Ajaran Sistem Aktif</span>
-                <p class="text-lg font-bold text-slate-900 mt-0.5">{{ $taAktif?->tahun ?? '-' }}</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button type="button" @click="buka('aktif','prev','{{ $prevAktif?->tahun ?? '' }}')"
-                        @if (! $prevAktif) disabled @endif
-                        class="w-10 h-10 rounded-xl border border-slate-200 font-bold text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors">&lsaquo;</button>
-                <button type="button" @click="buka('aktif','next','{{ $taAktif?->tahun ?? '' }}')"
-                        class="w-10 h-10 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition-colors">&rsaquo;</button>
-            </div>
-        </div>
-        <div class="flex items-center justify-between gap-3 border-t border-slate-100 pt-5">
-            <div>
-                <span class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Tahun Ajaran PPDB</span>
-                <p class="text-lg font-bold text-slate-900 mt-0.5">{{ $taPpdb?->tahun ?? '-' }}</p>
-            </div>
-            <div class="flex items-center gap-2">
-                <button type="button" @click="buka('ppdb','prev','{{ $prevPpdb?->tahun ?? '' }}')"
-                        @if (! $prevPpdb) disabled @endif
-                        class="w-10 h-10 rounded-xl border border-slate-200 font-bold text-slate-600 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors">&lsaquo;</button>
-                <button type="button" @click="buka('ppdb','next','{{ $taPpdb?->tahun ?? '' }}')"
-                        class="w-10 h-10 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition-colors">&rsaquo;</button>
-            </div>
-        </div>
-    </div>
-
-    {{-- A2: modal konfirmasi navigasi TA --}}
-    <div x-show="modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs" x-cloak>
-        <div class="bg-white rounded-[2.5rem] p-8 max-w-sm w-full border border-slate-100 shadow-2xl space-y-6" @click.away="modal = false">
-            <div class="space-y-1">
-                <h3 class="text-lg font-bold text-slate-950">Ubah Tahun Ajaran?</h3>
-                <p class="text-xs text-slate-500">
-                    Anda akan mengarahkan
-                    <span class="font-bold text-slate-800" x-text="scope === 'aktif' ? 'Tahun Ajaran Sistem' : 'Tahun Ajaran PPDB'"></span>
-                    ke <span class="font-bold text-slate-800" x-text="tujuan"></span>.
-                    Yakin lanjutkan?
-                </p>
-            </div>
-            <div class="flex space-x-3">
-                <button type="button" @click="modal = false" class="flex-1 py-3 border border-slate-200 hover:bg-slate-50 font-bold rounded-xl text-xs text-slate-600">Batal</button>
-                <form action="{{ route('admin.settings.academic-year') }}" method="POST" class="flex-1" @submit="modal = false">
-                    @csrf
-                    <input type="hidden" name="scope" :value="scope">
-                    <input type="hidden" name="arah" :value="arah">
-                    <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-md text-xs">Lanjutkan</button>
-                </form>
-            </div>
-        </div>
     </div>
 
 </div>

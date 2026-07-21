@@ -45,7 +45,7 @@
                 <option value="">Semua Role</option>
                 <option value="admin" @selected($roleFilter === 'admin')>Admin</option>
                 <option value="guru" @selected($roleFilter === 'guru')>Guru</option>
-                <option value="orang tua" @selected($roleFilter === 'orang tua')>Orang Tua</option>
+                <option value="ortu" @selected($roleFilter === 'ortu')>Orang Tua</option>
             </select>
             <select name="status" class="px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:border-sky-500" onchange="this.form.submit()">
                 <option value="">Semua Status</option>
@@ -75,7 +75,7 @@
                 <tbody class="divide-y divide-slate-50">
                     @foreach ($users as $u)
                         @php
-                            $roleBadge = ['admin'=>'bg-purple-100 text-purple-700', 'guru'=>'bg-sky-100 text-sky-700', 'orang tua'=>'bg-emerald-100 text-emerald-700'][$u->role] ?? 'bg-slate-100 text-slate-600';
+                            $roleBadge = ['admin'=>'bg-purple-100 text-purple-700', 'guru'=>'bg-sky-100 text-sky-700', 'ortu'=>'bg-emerald-100 text-emerald-700'][$u->role] ?? 'bg-slate-100 text-slate-600';
                             $profil = $u->role === 'admin' ? $u->username : ($u->ortu?->namaWali() ?? $u->teacher?->nama ?? '-');
                             $email = $u->email ?? '-';
                             $noHp = $u->no_hp ?? ($u->teacher?->no_hp ?? $u->ortu?->noHpWali() ?? '-');
@@ -156,7 +156,7 @@
                     <input type="text" name="username" x-model="editUsername" required @input="checkU($event.target.value, editId)" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500">
                 </div>
                 <div><label class="text-2xs font-bold text-slate-500 uppercase">Email</label><input type="email" name="email" x-model="editEmail" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500"></div>
-                <div><label class="text-2xs font-bold text-slate-500 uppercase">No. HP</label><input type="text" name="no_hp" x-model="editNoHp" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500"></div>
+                <div><label class="text-2xs font-bold text-slate-500 uppercase">No. HP</label><input type="text" name="no_hp" inputmode="numeric" pattern="[0-9]{9,14}" x-model="editNoHp" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500"></div>
                 <div><label class="text-2xs font-bold text-slate-500 uppercase">Password (kosongi jika tidak diganti)</label><input type="password" name="password" minlength="8" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500"></div>
                 <button type="submit" :disabled="uStatus === 'taken' || uStatus === 'invalid'" class="w-full py-3 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs">Simpan Perubahan</button>
             </form>

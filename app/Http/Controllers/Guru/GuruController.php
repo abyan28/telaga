@@ -71,6 +71,7 @@ class GuruController extends Controller
         $rules = Student::profilRules();
         // update: nik ignore diri sendiri
         $rules['nik'] = ['required', 'digits:16', \Illuminate\Validation\Rule::unique('students','nik')->ignore($student->id_students,'id_students')];
+        $rules['nis'] = ['nullable', 'digits_between:15,18', \Illuminate\Validation\Rule::unique('students','nis')->ignore($student->id_students,'id_students')];
 
         $data = $request->validate($rules, ValidationRules::messages());
         $student->update($data);
@@ -90,6 +91,7 @@ class GuruController extends Controller
         $rules = Student::profilRules();
         $rules['nik'] = ['required', 'digits:16', 'unique:students,nik'];
         $rules['nisn'] = ['nullable', 'digits:10', 'unique:students,nisn'];
+        $rules['nis'] = ['nullable', 'digits_between:15,18', 'unique:students,nis'];
         $rules['id_class'] = ['required', Rule::in($classIds)];
         $rules['foto'] = ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'];
 
@@ -100,6 +102,7 @@ class GuruController extends Controller
             'id_class.in' => 'Anda hanya bisa menambah murid ke kelas yang Anda ampu.',
         ]);
         $data['nisn'] = $data['nisn'] ?? null;
+        $data['nis'] = $data['nis'] ?? null;
         $data['id_academic_year'] = \App\Models\AcademicYear::where('is_aktif', true)->value('id_academic_years');
         $foto = $request->file('foto'); // simpan setelah create agar folder pakai PK (nama kembar)
         unset($data['foto']);

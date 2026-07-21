@@ -38,11 +38,11 @@ return new class extends Migration
                   ->references('id_users')->on('users')
                   ->cascadeOnDelete();
 
-            $table->enum('jenis', ['pendaftaran', 'daftar_ulang', 'spp']); // Jenis pembayaran
+            $table->enum('jenis', ['pendaftaran', 'daftar_ulang', 'spp', 'refund']); // Jenis pembayaran (refund = catatan pembatalan DU, L2.1)
             // Referensi opsional ke tagihan spesifik (mis. id_monthly_spp_bills / id_re_registration_payments)
             $table->unsignedBigInteger('referensi_id')->nullable();
             $table->decimal('jumlah', 12, 2);            // Nominal dibayar (presisi uang)
-            $table->string('bukti_path');                // Path bukti transfer
+            $table->string('bukti_path')->nullable();   // Path bukti transfer (nullable untuk jenis=refund)
             $table->enum('status', ['pending', 'diverifikasi', 'ditolak'])->default('pending');
             $table->text('catatan')->nullable();         // Catatan admin (mis. alasan tolak)
             $table->date('tanggal_bayar');               // Tanggal transaksi

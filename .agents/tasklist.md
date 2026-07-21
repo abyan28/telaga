@@ -1148,6 +1148,53 @@ Plan `boleh_cicil` per-wali DIBATALKAN — user konfirmasi update: pendaftaran &
   Helper `namaWali()`/`noHpWali()` tetap. Label UI "Wali"→"Orang Tua". `isWaliKelas`/`homeroom` TAK disentuh.
   Verifikasi: `php artisan test` = **125 passed (479)**, `npm run build` OK, `dump-autoload` + `view:cache` OK.
 
+- [x] ✅ **Fix sidebar ortu kosong** (2026-07-21) Role DB `'ortu'` tapi sidebar cek `=== 'orang tua'` (label lama) → menu kosong.
+  Fix: `=== 'ortu'` di 2 blok (desktop+mobile) layouts/dashboard.blade + accounts filter value/badge key. Admin/guru tak terdampak.
+
+- [x] ✅ **Validasi client form daftar + cabang** (2026-07-21) (a) Step-1 13 field L1.2 baru → `[required]` + loop `querySelectorAll`.
+  (b) pekerjaan_lain `:required` + server `required_if:LAINNYA`. (c) ngaji_dimana/metode/jilid + belajar_keterangan `:required` binding Alpine.
+  Server-side `required_if` sudah ada di `Student::profilRules()`. 125 passed, build ✓.
+
+- [x] ✅ **Input numerik-only** (2026-07-21) `inputmode="numeric" pattern` di 10 blade (no_hp/nik/nisn/nis/nuptk).
+  1 delegated handler di layouts/dashboard.blade footer: keydown block non-digit + input event strip paste. Build ✓.
+
+- [x] ✅ **Kolom NIS di students** (2026-07-21) Migration `add_nis_to_students_table` (string 18, nullable unique).
+  Fillable Student + `digits_between:15,18` unique di MasterData (store+update) + Guru (store+update) + UppercaseInput skip.
+  Field NIS di form tambah/edit admin (Alpine `f.nis` + `blank.nis`) & guru. 125 passed, build ✓.
+
+- [x] ✅ **Git init + push ke GitHub** (2026-07-21) Repo github.com/abyan28/telaga (initial commit, 220 files).
+  Update via: `git add -A && git commit -m "pesan" && git push`.
+
+- [x] ✅ **L6.2** Biodata lengkap di halaman Detail & Verifikasi Pendaftaran (2026-07-21).
+  Card setelah bukti bayar: Biodata Calon Murid full-width (semua field form pendaftaran + NIS + alamat keluarga),
+  grid 3 kolom di lg. Di bawahnya 2 card berdampingan: Biodata Ayah & Biodata Ibu (nama, TTL, agama, pendidikan,
+  pekerjaan+lainnya, penghasilan, no HP; tampil "tidak diisi" bila ada_ayah/ada_ibu=false).
+  Hanya view — nol migration/route/controller. view:cache OK, 21 AdminGuruViewsTest hijau.
+
+- [x] ✅ **L2.1** Calon Murid + Generate NIS + Batal + Pengaturan Sistem (2026-07-21).
+  * Halaman Calon Murid (admin.calon-murid): datatable siswa lulus+bayarDU>0+nis null. Kolom NIS setelah Orang Tua.
+    Tombol Generate NIS (gated PPDB tutup + NSM 12 digit): sort abjad, nis=NSM+YY+urut3, status→aktif, batch 1 POST.
+    Tombol Batal per-baris: refund=max(0,terbayar−denda), denda=(100−persen_refund)%×total. Terbayar<denda → teks
+    "Lunasi Rp X dulu" (bukan tombol). Catat PaymentTransaction jenis=refund (nullable bukti_path).
+  * Pengaturan Sistem (admin.system): tab sidebar baru bawah Konten Web (desktop+mobile). 3 sub-tab: NSM (12 digit) /
+    Refund % / Tahun Ajaran (dipindah dari Set Pembayaran). SettingController@system/updateSystem.
+  * Tab Tahun Ajaran dihapus dari Set Pembayaran (sekarang di Pengaturan Sistem).
+  * Data Murid: syarat K5.1 diganti → nis IS NOT NULL (bukan terbayar>0; calon belum ber-NIS tak tampil di Data Murid).
+  * Gate login ortu: PPDB tutup + tak ada anak aktif/calon-lulus/dibatalkan-utang-denda → blokir. PPDB buka → hidup lagi.
+  * Dashboard Keuangan Masuk: exclude jenis='refund'.
+  * Migration: +enum refund/dibatalkan di CREATE migrations (SQLite+MySQL fresh) + ALTER MySQL-only untuk DB live;
+    bukti_path nullable.
+  * Test: 1 test update (K5.1→L2.1 nis-based) + 1 test baru L2.1. 126 passed (493 assertions), build ✓.
+  * FIX (2026-07-22): persen_refund = persen DENDA langsung (bukan 100−x). Blade/controller/gate login diselaraskan. Default 30.
+
+- [x] ✅ **L8.1 (sebagian)** Auto-akun ortu saat input murid lama (2026-07-22).
+  Form Tambah Murid admin +field "No. HP Orang Tua" (mode create). Diisi → MasterDataController::linkOrtu()
+  (helper baru, dipakai bareng createOrtuAccount T9.1 — buang duplikasi ~20 baris): username=no_hp,
+  password=NIK anak (kakak bila kakak-adik), must_change_password, no_hp→ibu_no_hp. Merge kakak-adik by users.no_hp
+  (1 akun, sandi tak berubah). Kosong → murid saja. Keputusan: password NIK anak (no_hp bocor di grup WA; NIK aman).
+  createOrtuAccount password lama (no_hp) ikut ganti → NIK. Test WaliAccountTest +1 (add_student_with_ortu_hp) +
+  assert password=NIK. 127 passed (502 assertions), build ✓. SISA L8.1: import CSV massal BELUM.
+
 **SISA backlog WARISAN (belum masuk Fase L):**
 - Task 3.C — Deployment awal.
 - [L9.1] [=T1.1/T1.2/T1.3] Verifikasi email + lupa sandi (SMTP).

@@ -342,4 +342,131 @@ class RegistrationController extends Controller
 
         return back()->with('success', 'Izin edit orang tua dibuka.');
     }
+
+    /**
+     * L2.1: daftar calon murid (lulus, sudah bayar DU sebagian/lunas, belum dapat NIS).
+     * Tab "Calon Murid" di halaman Daftar Ulang.
+     */
+    public function calonMurid(): View
+    {
+        // Calon = siswa dari PPDB (punya form lulus) + DU terbayar > 0 + nis null.
+        $calons = \App\Models\Student::with(['ortu', 'reRegistrationPayments' => fn ($q) => $q->latest()])
+            ->whereHas('registrationForms', fn ($q) => $q->where('status', 'lulus'))
+            ->whereHas('reRegistrationPayments', fn ($q) => $q->where('jumlah_terbayar', '>', 0))
+            ->whereNull('nis')
+            ->orderBy('nama_lengkap')
+            ->get();
+
+        $ppdbTutup  = \App\Models\Setting::get('pendaftaran_dibuka', '1') === '0';
+        $nsmSekolah = \App\Models\Setting::get('nsm_sekolah', '');
+        $persen     = (int) \App\Models\Setting::get('persen_refund', 70);
+
+        return view('admin.calon-murid', compact('calons', 'ppdbTutup', 'nsmSekolah', 'persen'));
+    }
+
+    /**
+     * L2.1: batalkan kelulusan calon murid (admin). Hitung refund dari rumus denda 30%.
+     * refund = max(0, terbayar − persen_denda% × total). Bila terbayar < denda → wajib lunasi.
+     */
+    public function cancelCalon(Request $request, \App\Models\Student $student): RedirectResponse
+    {
+        // Cari form lulus + tagihan DU.
+        $form = RegistrationForm::whereHas('student', fn ($q) => $q->where('id_students', $student->id_students))
+            ->where('status', 'lulus')->latest()->first();
+        $bill = \App\Models\ReRegistrationPayment::where('id_student', $student->id_students)
+            ->latest()->first();
+
+        if (! $form || ! $bill) {
+            return back()->withErrors(['batal' => 'Data calon murid tidak valid.']);
+        }
+
+        $persen      = (int) \App\Models\Setting::get('persen_refund', 30); // persen DENDA pembatalan
+        $denda       = round($bill->total_biaya * $persen / 100, 2);
+        $terbayar    = (float) $bill->jumlah_terbayar;
+        $refund      = max(0, $terbayar - $denda);
+        $adminId     = auth()->id();
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($form, $student, $bill, $refund, $terbayar, $denda, $adminId) {
+            // Tandai form dibatalkan + siswa nonaktif.
+            $form->update(['status' => 'dibatalkan']);
+            $student->update(['status' => 'nonaktif']);
+
+            // Catat refund administratif bila ada kelebihan di atas denda.
+            if ($refund > 0) {
+                \App\Models\PaymentTransaction::create([
+                    'id_student'          => $student->id_students,
+                    'id_registration_form'=> $form->id_registration_forms,
+                    'id_user'             => $adminId,
+                    'jenis'               => 'refund',
+                    'referensi_id'        => $bill->id_re_registration_payments,
+                    'jumlah'              => $refund,
+                    'status'              => 'diverifikasi', // langsung tercatat (admin yg input)
+                    'catatan'             => 'Refund pembatalan DU — terbayar '.number_format($terbayar,0,',','.').' denda '.number_format($denda,0,',','.'),
+                    'tanggal_bayar'       => now()->toDateString(),
+                    'verified_by'         => $adminId,
+                ]);
+            }
+
+            AuditLogService::record('batal_calon_murid', 'Student#'.$student->id_students,
+                ['status' => 'lulus', 'terbayar' => $terbayar],
+                ['status' => 'dibatalkan', 'refund' => $refund]);
+        });
+
+        $msg = $refund > 0
+            ? 'Kelulusan dibatalkan. Refund administratif Rp '.number_format($refund, 0, ',', '.').' dicatat.'
+            : ($terbayar < $denda
+                ? 'Kelulusan dibatalkan. Ortu wajib melunasi Rp '.number_format($denda - $terbayar, 0, ',', '.').' (sisa 30% denda).'
+                : 'Kelulusan dibatalkan. Tidak ada refund (terbayar = denda 30%).');
+
+        return redirect()->route('admin.calon-murid')->with('success', $msg);
+    }
+
+    /**
+     * L2.1: generate NIS batch untuk semua calon murid (nis null).
+     * Gate: PPDB harus sudah ditutup. Format: NSM(12) + YY(2) + urut(3).
+     */
+    public function generateNis(Request $request): RedirectResponse
+    {
+        if (\App\Models\Setting::get('pendaftaran_dibuka', '1') !== '0') {
+            return back()->withErrors(['nis' => 'Tutup PPDB terlebih dahulu sebelum generate NIS.']);
+        }
+
+        $nsm = trim((string) \App\Models\Setting::get('nsm_sekolah', ''));
+        if (strlen($nsm) !== 12 || ! ctype_digit($nsm)) {
+            return back()->withErrors(['nis' => 'NSM Sekolah belum diisi atau tidak valid (12 digit). Isi di Pengaturan Sistem → NSM.']);
+        }
+
+        // Tahun 2 digit dari TA PPDB.
+        $taPpdb = \App\Models\AcademicYear::taPpdb();
+        $yy = $taPpdb->tahun ? substr(explode('/', $taPpdb->tahun)[0], -2) : now()->format('y');
+
+        // Ambil semua calon (nis null, lulus, sudah bayar DU), sort abjad.
+        $calons = \App\Models\Student::whereHas('registrationForms', fn ($q) => $q->where('status', 'lulus'))
+            ->whereHas('reRegistrationPayments', fn ($q) => $q->where('jumlah_terbayar', '>', 0))
+            ->whereNull('nis')
+            ->orderBy('nama_lengkap')
+            ->get(['id_students', 'nama_lengkap']);
+
+        if ($calons->isEmpty()) {
+            return back()->with('success', 'Tidak ada calon murid yang perlu di-generate NIS.');
+        }
+
+        // Hitung urut awal: pastikan tak bentrok dengan NIS existing bergaya sama.
+        $prefiks  = $nsm.$yy;
+        $lastUrut = \App\Models\Student::where('nis', 'like', $prefiks.'%')
+            ->orderByDesc('nis')->value('nis');
+        $urut = $lastUrut ? ((int) substr($lastUrut, -3)) + 1 : 1;
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($calons, $prefiks, &$urut) {
+            foreach ($calons as $s) {
+                $s->update(['nis' => $prefiks.str_pad($urut++, 3, '0', STR_PAD_LEFT), 'status' => 'aktif']);
+            }
+        });
+
+        AuditLogService::record('generate_nis_batch', 'Student', null,
+            ['jumlah' => $calons->count(), 'prefiks' => $prefiks]);
+
+        return redirect()->route('admin.calon-murid')
+            ->with('success', 'NIS berhasil digenerate untuk '.$calons->count().' murid.');
+    }
 }

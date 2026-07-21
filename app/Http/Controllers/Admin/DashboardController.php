@@ -27,7 +27,9 @@ class DashboardController extends Controller
         $persenKuota = $kuota > 0 ? round($lulus / $kuota * 100) : 0;
 
         // Keuangan masuk = total transaksi terverifikasi (source of truth PRD §13).
-        $keuanganMasuk = (int) PaymentTransaction::where('status', 'diverifikasi')->sum('jumlah');
+        // L2.1: exclude jenis 'refund' (catatan uang keluar, bukan pemasukan).
+        $keuanganMasuk = (int) PaymentTransaction::where('status', 'diverifikasi')
+            ->where('jenis', '!=', 'refund')->sum('jumlah');
 
         // K6.3: pending verifikasi dipisah — PPDB vs Pembayaran (daftar ulang + SPP).
         // Jumlah bukti bayar pending per jenis (satu query, groupBy).

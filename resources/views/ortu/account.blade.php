@@ -27,7 +27,7 @@
             </div>
             <div class="space-y-1">
                 <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Nomor HP</label>
-                <input type="text" name="no_hp" value="{{ old('no_hp', auth()->user()->no_hp) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500">
+                <input type="text" name="no_hp" inputmode="numeric" pattern="[0-9]{9,14}" value="{{ old('no_hp', auth()->user()->no_hp) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500">
             </div>
             <button type="submit" class="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl shadow-md text-xs transition-colors">Simpan Perubahan</button>
         </form>

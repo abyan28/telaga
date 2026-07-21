@@ -27,7 +27,7 @@ class UppercaseInput
      */
     private const SKIP = [
         'email', 'password', 'password_confirmation', 'current_password',
-        'no_hp', 'nik', 'nisn', 'nuptk', 'username', 'login', '_token', '_method',
+        'no_hp', 'nik', 'nisn', 'nis', 'nuptk', 'username', 'login', '_token', '_method',
         'status', 'jenis', 'jenis_kelamin', 'role', 'keputusan', 'grup',
         'catatan', 'catatan_admin', 'scope', 'arah', 'dibuka', 'tab', 'sub',
         'sudah_mengaji', 'pernah_belajar', 'ukuran_baju',
