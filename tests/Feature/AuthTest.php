@@ -33,7 +33,7 @@ class AuthTest extends TestCase
      */
     public function test_wali_signup_forces_wali_role_and_creates_ortu(): void
     {
-        $response = $this->post('/register', [
+        $response = $this->withSession(['otp_verified_email' => 'amira@test.id'])->post('/register', [
             'username' => 'bunda_amira',
             'email' => 'amira@test.id',
             'password' => 'password123',
@@ -55,7 +55,7 @@ class AuthTest extends TestCase
      */
     public function test_signup_ignores_injected_role(): void
     {
-        $this->post('/register', [
+        $this->withSession(['otp_verified_email' => 'hacker@test.id'])->post('/register', [
             'username' => 'peretas',
             'email' => 'hacker@test.id',
             'password' => 'password123',
@@ -73,17 +73,17 @@ class AuthTest extends TestCase
     public function test_username_constraint_and_availability(): void
     {
         // Spasi & tanda hubung ditolak
-        $this->post('/register', [
+        $this->withSession(['otp_verified_email' => 'a@test.id'])->post('/register', [
             'username' => 'ada spasi', 'email' => 'a@test.id',
             'password' => 'password123', 'password_confirmation' => 'password123',
         ])->assertSessionHasErrors('username');
-        $this->post('/register', [
+        $this->withSession(['otp_verified_email' => 'b@test.id'])->post('/register', [
             'username' => 'pakai-hubung', 'email' => 'b@test.id',
             'password' => 'password123', 'password_confirmation' => 'password123',
         ])->assertSessionHasErrors('username');
 
         // < 6 karakter ditolak (constraint min 6)
-        $this->post('/register', [
+        $this->withSession(['otp_verified_email' => 'c@test.id'])->post('/register', [
             'username' => 'budi', 'email' => 'c@test.id',
             'password' => 'password123', 'password_confirmation' => 'password123',
         ])->assertSessionHasErrors('username');
@@ -286,5 +286,45 @@ class AuthTest extends TestCase
             ->assertSee('GuruX')
             ->assertSee('WaliX')
             ->assertSee('Admin');
+    }
+
+    /**
+     * T1.1: OTP email verification flow — send, verify, guard register.
+     */
+    public function test_otp_email_verification_flow(): void
+    {
+        \Illuminate\Support\Facades\Mail::fake();
+
+        // Kirim OTP
+        $this->post('/register/send-otp', ['email' => 'otp@test.id'])
+            ->assertOk()->assertJson(['sent' => true]);
+
+        \Illuminate\Support\Facades\Mail::assertSent(\App\Mail\OtpVerification::class);
+
+        // Ambil OTP dari session test dan verifikasi
+        $code = session('otp_code');
+        $this->assertNotNull($code);
+
+        $this->post('/register/verify-otp', ['email' => 'otp@test.id', 'code' => $code])
+            ->assertOk()->assertJson(['verified' => true]);
+
+        // Sekarang registrasi harusnya lolos
+        $this->post('/register', [
+            'username' => 'otp_wali', 'email' => 'otp@test.id',
+            'password' => 'password123', 'password_confirmation' => 'password123',
+        ])->assertRedirect(route('ortu.dashboard'));
+    }
+
+    /**
+     * T1.1: Registrasi gagal tanpa verifikasi email.
+     */
+    public function test_register_rejected_without_email_verification(): void
+    {
+        \Illuminate\Support\Facades\Mail::fake();
+
+        $this->post('/register', [
+            'username' => 'blumverif', 'email' => 'unverified@test.id',
+            'password' => 'password123', 'password_confirmation' => 'password123',
+        ])->assertSessionHasErrors('email');
     }
 }

@@ -93,5 +93,8 @@ class DatabaseSeeder extends Seeder
 
         // --- 7. Daftar bank (T8.1) dari bank.csv ---
         $this->call(BankSeeder::class);
+
+        // --- 8. Data dummy (~80 murid+ortu + 20 guru + transaksi) ---
+        $this->call(DummyDataSeeder::class);
     }
 }

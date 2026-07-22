@@ -114,6 +114,15 @@ class User extends Authenticatable
     }
 
     /**
+     * Override notifikasi reset password — email Indonesia + brand (T1.2).
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        \Illuminate\Support\Facades\Mail::to($this->email)
+            ->send(new \App\Mail\ResetPasswordMail($token, $this->email));
+    }
+
+    /**
      * Akun ortu auto-create (T9.1) belum disetup: email kosong atau username
      * masih = no_hp (belum diubah wali). Gate wajib isi pengaturan akun dulu.
      * ponytail: username===no_hp sbg proxy "belum diubah"; add flag kolom kalau proxy kelewat.

@@ -665,7 +665,7 @@ Dikelompokkan per tema. Prioritas kasar: BUG dulu → validasi → UX → fitur 
           +lainnya, penghasilan, no HP). view:cache + 21 admin test hijau.
 
     L7. Data dummy
-        - [L7.1] ~100 data dummy semua tabel (tunggu L1 stabil).
+        - [L7.1] [DONE 2026-07-22] DummyDataSeeder: 83 murid+ortu (status acak: alumni/aktif-DU-lunas/DU-cicil/submitted/menunggu-verif/bayar-diverif/diproses-seleksi/gagal/nonaktif/1ortu-2anak/cicil+SPP) + 20 guru + transaksi keuangan (DU/SPP/pendaftaran diverif/pending/ditolak). Idempoten firstOrCreate, dipanggil dari DatabaseSeeder. PITFALL: (1) enum students.status HANYA aktif/lulus/nonaktif (dropout tak ada) → pakai nonaktif; (2) interpolasi "{$i % 10}" ParseError → concat; (3) guru no_hp offset 081355 hindari bentrok DemoSeeder.
 
     L8. Import / export (diskusi)
         - [L8.1] [SELESAI 2026-07-22] Auto-akun ortu saat input murid lama + IMPORT CSV MASSAL.
@@ -696,7 +696,9 @@ Dikelompokkan per tema. Prioritas kasar: BUG dulu → validasi → UX → fitur 
           IMPORT_COLUMNS +angkatan. PITFALL: closure generateNis butuh use($yy); $data['angkatan'] null-coalesce.
 
     L9. Deploy / email (blocked SMTP)
-        - [L9.1] [=T1.1–T1.3] Verifikasi email daftar + lupa sandi + link di form.
+        - [L9.1] [=T1.1–T1.3] Verifikasi email daftar (***T1.1 SELESAI 2026-07-22***) + lupa sandi (***T1.2/T1.3 SELESAI 2026-07-22***) + link di form.
+        - T1.1: OTP 6-digit via Mailjet SMTP, session-based, guard register. Email masuk SPAM (blm punya domain).
+        - T1.2/T1.3: Laravel Password broker, ForgotPassword+ResetPassword controller, email Indonesia custom, link login. Email SPAM (blm punya domain).
 
     ─── RAW BRIEF USER (sumber, jangan hapus) ───
 - Untuk fitur catatan siswa yg diinput oleh guru, sementara ini hapus saja untuk fitur tersebut. Update semua halaman yg berkaitan dengan perubahan ini, baik di cms wali, admin, guru.

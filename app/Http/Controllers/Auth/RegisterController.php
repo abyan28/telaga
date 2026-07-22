@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\OrangTua;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * RegisterController — registrasi mandiri (self-signup) wali murid.
@@ -28,6 +30,11 @@ class RegisterController extends Controller
      */
     public function register(Request $request): RedirectResponse
     {
+        // Guard T1.1: email wajib diverifikasi via OTP sebelum daftar.
+        if (session('otp_verified_email') !== $request->input('email')) {
+            return back()->withErrors(['email' => 'Email belum diverifikasi. Silakan kirim kode verifikasi terlebih dahulu.'])->withInput();
+        }
+
         // Validasi input registrasi. Username: unik, tanpa spasi/tanda hubung/simbol
         // (hanya huruf, angka, underscore, titik). Nama wali diisi nanti di CMS wali.
         $validated = $request->validate([
@@ -65,11 +72,71 @@ class RegisterController extends Controller
             return $user;
         });
 
-        // Login otomatis setelah registrasi berhasil
+        // Login otomatis setelah registrasi berhasil — bersihkan OTP session
+        $request->session()->forget(['otp_code', 'otp_email', 'otp_expires_at', 'otp_verified_email']);
         Auth::login($user);
         $request->session()->regenerate();
 
         return redirect()->route('ortu.dashboard');
+    }
+
+    /**
+     * T1.1: Kirim OTP 6 digit ke email via Brevo SMTP.
+     * Simpan OTP + expiry di session (5 menit).
+     */
+    public function sendOtp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email', 'max:255'],
+        ]);
+
+        // Resend cooldown: 60 detik sejak OTP terakhir dikirim
+        $lastSent = $request->session()->get('otp_sent_at', 0);
+        if (now()->getTimestamp() - $lastSent < 60) {
+            return response()->json(['error' => 'Tunggu sebelum mengirim ulang kode.'], 429);
+        }
+
+        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        Mail::to($request->email)->send(new \App\Mail\OtpVerification($code));
+
+        $request->session()->put([
+            'otp_code'       => $code,
+            'otp_email'      => $request->email,
+            'otp_expires_at' => now()->addMinutes(5)->getTimestamp(),
+            'otp_sent_at'    => now()->getTimestamp(),
+        ]);
+
+        return response()->json(['sent' => true]);
+    }
+
+    /**
+     * T1.1: Verifikasi OTP dari session.
+     * Bila cocok & belum expired → set session otp_verified_email.
+     */
+    public function verifyOtp(Request $request): JsonResponse
+    {
+        $request->validate([
+            'email' => ['required', 'email'],
+            'code'  => ['required', 'string', 'size:6'],
+        ]);
+
+        $session = $request->session();
+
+        if ($session->get('otp_email') !== $request->email) {
+            return response()->json(['verified' => false, 'error' => 'Email tidak sesuai.'], 422);
+        }
+        if (now()->getTimestamp() > (int) $session->get('otp_expires_at', 0)) {
+            return response()->json(['verified' => false, 'error' => 'Kode sudah kedaluwarsa. Silakan kirim ulang.'], 410);
+        }
+        if ($session->get('otp_code') !== $request->code) {
+            return response()->json(['verified' => false, 'error' => 'Kode salah.'], 422);
+        }
+
+        $session->put('otp_verified_email', $request->email);
+        $session->forget(['otp_code', 'otp_expires_at']);
+
+        return response()->json(['verified' => true]);
     }
 
     /**

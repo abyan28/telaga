@@ -36,9 +36,11 @@
 - [done] di pengaturan akun csm ortu, tambahkan ubah username dan jangan lupa validasi langsung di form apakah username tersebut tersedia atau tidak.
 - [done] apakah email bisa masuk ke dalam tabel parents? sebab saya cek kolom email hanya ada di tabel users, sedangkan nanti ini penting untuk notifikasi ke depannya. masuk dalam mode plan dulu untuk tahu apakah ini bisa diimplementasikan atau gak.
 - [done] badge pada sidebar pendaftaran murid untuk konfirmasi cukup dihitung 1 saja untuk tiap pendaftar (jika masih ada yg perlu diverifikasi). Cuma nanti untuk notif pending verifikasi pembayaran ppdb tetap terhitung 1 juga dan muncul di badge dashboard pending pembayaran berdasarkan apakah pembayaran ppdb nya sudah diverif atau belum. jika sudah, badge angka di pending pembayaran hilang. namun jika proses verifikasi berkas dan proses seleksi belum selesai, maka badge angka pada pending ppdb dan pendaftaran murid tetep 1 (berdasarkan jumlah data pendaftar).
-- lengkapi data pada halaman profil guru sesuai di database
-- tambahkan kolom angkatan pada halaman data murid
+- [done] lengkapi data pada halaman profil guru sesuai di database
+- [done] tambahkan kolom angkatan pada datatabel di halaman data murid
 - blokw212728
+- [done] kirimkan email saat menerima tagihan pembayaran ppdb, pembayaran daftar ulang, dan pembayaran spp. kirimkan email juga untuk memberitahukan status kelulusan calon murid. kirimkan email juga saat verifikasi pembayaran berhasil untuk pembayaran ppdb, daftar ulang, dan spp. Jangan lupa ya, isi emailnya bukan sekedar pemberitahuan saja, melainkan juga lengkap dengan detail transaksinya.
+
 
 DISKUSI K10.4
 - setelah membaca opsi-opsi yang kamu berikan, bagaimana kalau kita buat halaman baru untuk mengelola data orang tua? Halamannya mirip halaman data siswa, jadi berupa datatable, ada fungsi search, paginasi, filter kelas, filter status aktif. Untuk judul kolomnya kira2 begini -> Nama Orang Tua - No. HP - Pekerjaan - Nama Anak - Nama Wali Kelas - Kelas - Status - Aksi. Untuk kolom anak, nama wali kelas, dan kelas, jika anaknya lebih dari satu, tetap buat dalam satu kolom namun nama anaknya ditumpuk, begitupun juga dengan nama wali kelas dan kelasnya, tapi harus sejajar dengan nama anaknya ya. Itu dengan catatan kalau tiap anak itu wali kelas dan kelasnya beda. Kalau wali kelas dan kelasnya sama, ya isi masing2 satu data wali kelas dan kelas. Nanti di kolom aksi ada button untuk lihat profil lengkap orang tua (ada alamat juga beserta list semua anaknya), edit profil orang tua, dan tentu button untuk flag bisa cicil atau gak. 

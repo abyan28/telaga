@@ -14,18 +14,22 @@ use Illuminate\Queue\SerializesModels;
  * Dipakai untuk berbagai peristiwa (pendaftaran terkirim, bukti diunggah,
  * pembayaran diverifikasi/ditolak, kelulusan, tagihan SPP baru). Judul & isi
  * pesan diinjeksikan agar satu Mailable melayani banyak trigger (DRY).
+ *
+ * $detail = pasangan label→nilai untuk tabel rincian transaksi (opsional).
  */
 class RegistrationNotification extends Mailable
 {
     use Queueable, SerializesModels;
 
     /**
-     * @param  string  $judul  Subjek/judul notifikasi.
-     * @param  string  $pesan  Isi pesan notifikasi.
+     * @param  string                $judul   Subjek/judul notifikasi.
+     * @param  string                $pesan   Isi pesan notifikasi.
+     * @param  array<string, string>  $detail  Rincian transaksi (label => nilai); kosong = tanpa tabel.
      */
     public function __construct(
         public string $judul,
         public string $pesan,
+        public array $detail = [],
     ) {}
 
     /**

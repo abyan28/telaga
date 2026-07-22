@@ -304,15 +304,38 @@ class RegistrationController extends Controller
         AuditLogService::record('keputusan_seleksi', 'RegistrationForm#'.$form->id_registration_forms,
             $sebelum, ['status' => $form->status]);
 
-        // Notifikasi email ke wali (PRD §7.13).
-        $form->loadMissing('user');
+        // Notifikasi email ke wali lengkap dengan detail (PRD §7.13).
+        $form->loadMissing(['user', 'student', 'academicYear']);
         if ($form->user?->email) {
-            Mail::to($form->user->email)->send(new \App\Mail\RegistrationNotification(
-                $lulus ? 'Selamat, Calon Murid Dinyatakan Lulus' : 'Status Kelulusan',
-                $lulus
-                    ? 'Ananda dinyatakan LULUS seleksi. Silakan lanjutkan pembayaran daftar ulang.'
-                    : 'Mohon maaf, status kelulusan calon murid dinyatakan TIDAK LULUS.',
-            ));
+            $rp = fn ($n) => 'Rp '.number_format((float) $n, 0, ',', '.');
+            $namaAnak = $form->student?->nama_lengkap ?? '-';
+            $tahunAjaran = $form->academicYear?->tahun ?? '-';
+
+            if ($lulus) {
+                $nominalDu = (int) Setting::get('nominal_daftar_ulang', 0);
+                $rekening  = trim(Setting::get('bank_sekolah', '').' '.Setting::get('rekening_sekolah', ''));
+                $atasNama  = Setting::get('atas_nama', '');
+                $detail = [
+                    'Nama Siswa'      => $namaAnak,
+                    'Tahun Ajaran'    => $tahunAjaran,
+                    'Status Seleksi'  => 'LULUS ✓',
+                    'Biaya Daftar Ulang' => $rp($nominalDu),
+                ];
+                if ($rekening !== '') {
+                    $detail['Rekening Sekolah'] = $rekening.($atasNama ? ' a.n. '.$atasNama : '');
+                }
+                Mail::to($form->user->email)->send(new \App\Mail\RegistrationNotification(
+                    'Selamat, '.$namaAnak.' Dinyatakan Lulus Seleksi',
+                    'Selamat! Calon murid atas nama '.$namaAnak.' dinyatakan LULUS seleksi PPDB Tahun Ajaran '.$tahunAjaran.'. Silakan segera lakukan pembayaran Daftar Ulang sesuai nominal di bawah ini.',
+                    $detail,
+                ));
+            } else {
+                Mail::to($form->user->email)->send(new \App\Mail\RegistrationNotification(
+                    'Pemberitahuan Status Seleksi '.$namaAnak,
+                    'Mohon maaf, calon murid atas nama '.$namaAnak.' dinyatakan TIDAK LULUS seleksi PPDB Tahun Ajaran '.$tahunAjaran.'. Terima kasih atas kepercayaan Anda mendaftarkan putra-putri di RA Al Kautsar.',
+                    ['Nama Siswa' => $namaAnak, 'Tahun Ajaran' => $tahunAjaran, 'Status Seleksi' => 'Tidak Lulus'],
+                ));
+            }
         }
 
         return back()->with('success', $lulus ? 'Calon murid dinyatakan LULUS.' : 'Calon murid dinyatakan TIDAK LULUS.');

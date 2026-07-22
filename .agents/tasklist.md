@@ -1275,3 +1275,42 @@ Plan `boleh_cicil` per-wali DIBATALKAN — user konfirmasi update: pendaftaran &
   Test `test_parents_page_lists_and_filters`. 141 passed (540 assertions), build ✓.
   ponytail: no dedicated edit-ortu page, add when diminta.
   L3.1/L3.2 solved by user (tidak dikerjakan).
+
+- [x] ✅ **N2 SELESAI** L7.1 Data Dummy (2026-07-22).
+  `DummyDataSeeder`: 83 murid+ortu (11 skenario status acak: alumni/aktif-DU-lunas/DU-cicil/submitted/menunggu-verif/bayar-diverif/diproses-seleksi/gagal/nonaktif/1ortu-2anak/cicil+SPP), 20 guru, 173 transaksi (DU/SPP/pendaftaran diverif/pending/ditolak).
+  Dipanggil dari DatabaseSeeder, idempoten firstOrCreate. PITFALL: enum status 3 nilai (no dropout); PHP {$i%10} ParseError → concat; guru HP offset 081355. 141 passed, build ✓.
+
+## Fase O — Verifikasi Email OTP (2026-07-22)
+
+- [x] ✅ **O1 SELESAI** T1.1 Verifikasi email OTP saat signup ortu (Mailjet SMTP).
+  `RegisterController@sendOtp/verifyOtp`: 6-digit OTP via Mailjet, session TTL 5 menit, cooldown 60s.
+  `register()` guard session `otp_verified_email`.
+  `App\Mail\OtpVerification` + view `emails/otp.blade.php`.
+  Form signup (`auth/login.blade`): email→Kirim Kode→input OTP→Verifikasi→badge hijau→Daftar aktif.
+  Route `register.send-otp`, `register.verify-otp`.
+  Test `test_otp_email_verification_flow` + `test_register_rejected_without_email_verification`.
+  3 test lama fix: `withSession(['otp_verified_email'=>...])`.
+  SMTP: Brevo→Mailjet. Blocked deliverability: from @gmail.com via Mailjet → DMARC reject/spam.
+  Butuh domain sendiri + SPF/DKIM di Mailjet + from `noreply@<domain>`.
+  143 passed (550 assertions), build ✓.
+
+## Fase P — Lupa Sandi (2026-07-22)
+
+- [x] ✅ **P1 SELESAI** T1.2 Lupa sandi (Laravel Password broker).
+  `ForgotPasswordController` + `ResetPasswordController` (broker built-in).
+  4 route: password.request/email/reset/update.
+  `User::sendPasswordResetNotification` → `ResetPasswordMail` + `emails/reset-password.blade.php` (Indonesia).
+- [x] ✅ **P2 SELESAI** T1.3 Link "Lupa Sandi?" di login form.
+  Pindah bawah field password, rata kanan.
+- Blocked deliverability: email masuk spam (sama seperti OTP — butuh domain sendiri).
+
+## Fase Q — Email Notifikasi Detail Transaksi (2026-07-22)
+
+- [x] ✅ **Q1 SELESAI** Email detail transaksi: verifikasi bayar PPDB/DU/SPP, kelulusan, tagihan SPP baru.
+  - `RegistrationNotification` +param ke-3 `array $detail = []` (backward-compatible).
+  - `emails/notification.blade.php` — tabel rincian transaksi (label→nilai) bila `$detail` terisi.
+  - `PaymentVerificationService::notifikasiWali()` — private method, dipanggil dari `approve()`. Skip jenis=refund & wali tanpa email. Detail: nama siswa, jenis, bulan (SPP), jumlah, bank asal, tanggal bayar, sisa tunggakan (DU/SPP), rekening sekolah.
+  - `RegistrationController@decide` — email lulus/gagal di-upgrade ke detail (nama anak, tahun ajaran, biaya DU + rekening bila lulus).
+  - `GenerateSppBills` — kirim email tagihan baru per-siswa bila `wasRecentlyCreated`; ganti `->get()` → `->cursor()` (hemat RAM). Detail: nama siswa, bulan, nominal, rekening.
+  - Test baru `test_payment_verification_sends_detailed_email` (CrossFeatureTest).
+  - 144 passed (551 assertions), build ✓.

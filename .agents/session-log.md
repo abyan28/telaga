@@ -1,8 +1,40 @@
 # Session Log — TELAGA AL KAUTSAR
 
 > Dokumen konteks untuk sesi Hermes/agent BARU. Baca ini + `tasklist.md` dulu sebelum kerja.
-> Terakhir diperbarui: 2026-07-22 (Sesi ini — +L3.3 Data Orang Tua; CMS konten/footer, badge PPDB, bank DB, show/hide pw, username ortu, account-setup gate — **SELESAI** — 141 test passed, build ✓)
+> Terakhir diperbarui: 2026-07-22 (Sesi ini — +T1.2/T1.3 lupa sandi (Laravel broker); +T1.1 OTP Mailjet; +L7.1; +L3.3 — **SELESAI** — 143 test, build ✓)
 
+> ## Sesi 2026-07-22e — T1.2/T1.3 Lupa Sandi + Link Login (SELESAI)
+> Verified: 143 passed (550), build ✓.
+> - `ForgotPasswordController` — form email → kirim link via Mailjet SMTP (Laravel Password broker, tabel `password_reset_tokens` sudah ada).
+> - `ResetPasswordController` — validasi token + email + password baru, update.
+> - `User::sendPasswordResetNotification` override → `ResetPasswordMail` + view `emails/reset-password.blade.php` (Indonesia, brand, tombol).
+> - 4 route (`password.request/email/reset/update`). Link "Lupa Sandi?" di login.blade bawah password, rata kanan.
+> - Blocked deliverability: email masuk spam (sama seperti OTP — butuh domain sendiri).
+
+---
+## Sesi 2026-07-22 — Fase Q: Email Notifikasi Detail Transaksi (SELESAI)
+Verified: 144 test passed (551 assertions), npm run build ✓, view:cache ✓.
+- `RegistrationNotification` + `array $detail = []` — tabel rincian transaksi di email.
+- `PaymentVerificationService@approve` → `notifikasiWali()`: kirim email verifikasi PPDB/DU/SPP — nama anak, jenis, bulan, jumlah, sisa tunggakan, rekening. Skip refund & wali tanpa email.
+- `RegistrationController@decide`: email lulus (biaya DU + rekening) & gagal (detail minimal) — bukan lagi 2 baris generik.
+- `GenerateSppBills`: email tagihan SPP baru per-siswa — nama, bulan, nominal, rekening. `->get()` → `->cursor()` (RAM hemat).
+> Verified: 143 test passed (550 assertions), build ✓. Email nyata terkirim via Mailjet (masuk spam — butuh domain sendiri + SPF/DKIM, lihat catatan).
+> - `RegisterController@sendOtp`: OTP 6-digit → Brevo/Mailjet SMTP, session TTL 5 menit, cooldown resend 60s (HTTP 429).
+> - `RegisterController@verifyOtp`: cek email+expiry+kode → set session `otp_verified_email`.
+> - `register()` guard: tolak bila `session('otp_verified_email') !== email`; bersihkan OTP session setelah sukses.
+> - `App\Mail\OtpVerification` + view `emails/otp.blade.php` (kartu, kode besar).
+> - Form signup (`auth/login.blade`): email + tombol Kirim Kode (countdown 60s) → input OTP 6-digit + Verifikasi → badge hijau → tombol Daftar disabled sampai verified.
+> - Route baru: `register.send-otp`, `register.verify-otp`. Test `test_otp_email_verification_flow` + `test_register_rejected_without_email_verification`; 3 test lama diperbaiki (`withSession(['otp_verified_email'=>...])`).
+> - SMTP: pindah Brevo→Mailjet (`in-v3.mailjet.com:587`). Brevo free rewrite sender → DMARC gmail reject. Mailjet OK tapi MASUK SPAM.
+> - BLOCKER deliverability: from `@gmail.com` via SMTP pihak-ketiga selalu kena DMARC → spam. FIX butuh domain sekolah sendiri + SPF/DKIM di Mailjet + from `noreply@<domain>`. Belum punya domain → ditunda.
+> - ponytail: session-based OTP (1 browser). DB `email_verifications` bila ada konflik multi-tab.
+>
+> ## Sesi 2026-07-22c — L7.1 Data Dummy (SELESAI)
+> Verified: 141 test passed (540 assertions), npm run build ✓.
+> - `DummyDataSeeder`: 83 murid+ortu (11 skenario status), 20 guru, 173 transaksi keuangan.
+> - Dipanggil dari `DatabaseSeeder`. Idempoten `firstOrCreate`.
+> - PITFALL: (1) `students.status` enum hanya aktif/lulus/nonaktif; (2) PHP `{$i % 10}` ParseError → concat; (3) guru HP offset `081355` hindari DemoSeeder.
+>
 > ## Sesi 2026-07-22b — L3.3 Data Orang Tua (SELESAI)
 > Verified: 141 test passed (540 assertions), npm run build ✓, view:cache ✓.
 > - `MasterDataController@parents`: list ortu (whereHas students) + 3 filter (cari ayah/ibu/anak, kelas, status murid) + paginate 25. Eager students.schoolClass.homeroomTeacher. Route `admin.data.parents` (di grup data.* sebelum wildcard).

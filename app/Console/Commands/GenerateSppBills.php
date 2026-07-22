@@ -2,11 +2,13 @@
 
 namespace App\Console\Commands;
 
+use App\Mail\RegistrationNotification;
 use App\Models\AcademicYear;
 use App\Models\MonthlySppBill;
 use App\Models\Setting;
 use App\Models\Student;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Command spp:generate — membuat tagihan SPP bulanan untuk siswa aktif.
@@ -45,7 +47,7 @@ class GenerateSppBills extends Command
 
         // Buat tagihan hanya untuk siswa berstatus aktif
         $count = 0;
-        foreach (Student::where('status', 'aktif')->get() as $student) {
+        foreach (Student::with('ortu.user')->where('status', 'aktif')->cursor() as $student) {
             $bill = MonthlySppBill::firstOrCreate(
                 [
                     'id_student' => $student->id_students,
@@ -62,6 +64,27 @@ class GenerateSppBills extends Command
             // Hitung hanya tagihan yang benar-benar baru dibuat
             if ($bill->wasRecentlyCreated) {
                 $count++;
+
+                // Kirim email notifikasi tagihan baru ke wali (PRD §7.13).
+                $email = $student->ortu?->user?->email;
+                if ($email) {
+                    $rp = fn ($n) => 'Rp '.number_format((float) $n, 0, ',', '.');
+                    $detail = [
+                        'Nama Siswa' => $student->nama_lengkap,
+                        'Bulan' => \Carbon\Carbon::parse($bulan.'-01')->translatedFormat('F Y'),
+                        'Nominal SPP' => $rp($nominal),
+                    ];
+                    $rekening = trim(Setting::get('bank_sekolah', '').' '.Setting::get('rekening_sekolah', ''));
+                    if ($rekening !== '') {
+                        $atasNama = Setting::get('atas_nama', '');
+                        $detail['Rekening Sekolah'] = $rekening.($atasNama ? ' a.n. '.$atasNama : '');
+                    }
+                    Mail::to($email)->send(new RegistrationNotification(
+                        'Tagihan SPP Baru — '.$student->nama_lengkap,
+                        'Tagihan SPP bulanan untuk '.$student->nama_lengkap.' telah diterbitkan. Silakan lakukan pembayaran sebelum batas waktu yang ditentukan.',
+                        $detail,
+                    ));
+                }
             }
         }
 

@@ -2,10 +2,13 @@
 
 namespace App\Services;
 
+use App\Mail\RegistrationNotification;
 use App\Models\MonthlySppBill;
 use App\Models\PaymentTransaction;
 use App\Models\ReRegistrationPayment;
+use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * PaymentVerificationService — sumber kebenaran perhitungan saldo (PRD §13).
@@ -33,6 +36,9 @@ class PaymentVerificationService
             $trx->update(['status' => 'diverifikasi', 'verified_by' => $adminId]);
             $this->syncBill($trx);
         });
+
+        // Notifikasi email ke wali: pembayaran diverifikasi (PRD §7.13).
+        $this->notifikasiWali($trx);
     }
 
     /**
@@ -126,5 +132,80 @@ class PaymentVerificationService
         }
 
         return $terbayar > 0 ? 'kurang' : 'belum_lunas';
+    }
+
+    /**
+     * Kirim email notifikasi ke wali bahwa pembayaran BERHASIL diverifikasi,
+     * lengkap dengan rincian transaksi (PRD §7.13). Dipanggil dari approve().
+     *
+     * Skip: jenis 'refund' (bukan pembayaran wali) & wali tanpa email.
+     * Rekening tujuan sekolah diambil dari settings (konsisten modul keuangan).
+     */
+    private function notifikasiWali(PaymentTransaction $trx): void
+    {
+        if ($trx->jenis === 'refund') {
+            return;
+        }
+
+        $trx->loadMissing(['user', 'student']);
+        $email = $trx->user?->email;
+        if (! $email) {
+            return; // Wali belum isi email → tak ada tujuan kirim.
+        }
+
+        // Label jenis pembayaran untuk judul & rincian.
+        $labelJenis = match ($trx->jenis) {
+            'pendaftaran' => 'Biaya Pendaftaran (PPDB)',
+            'daftar_ulang' => 'Daftar Ulang',
+            'spp' => 'SPP Bulanan',
+            default => ucfirst($trx->jenis),
+        };
+
+        $rp = fn ($n) => 'Rp '.number_format((float) $n, 0, ',', '.');
+
+        // Rincian transaksi.
+        $detail = [
+            'Nama Siswa' => $trx->student?->nama_lengkap ?? '-',
+            'Jenis Pembayaran' => $labelJenis,
+        ];
+
+        // SPP: sertakan bulan tagihan.
+        if ($trx->jenis === 'spp' && $trx->referensi_id) {
+            $bill = MonthlySppBill::find($trx->referensi_id);
+            if ($bill) {
+                $detail['Bulan'] = \Carbon\Carbon::parse($bill->bulan.'-01')->translatedFormat('F Y');
+            }
+        }
+
+        $detail['Jumlah Dibayar'] = $rp($trx->jumlah);
+        if ($trx->bank_asal) {
+            $detail['Bank Asal'] = $trx->bank_asal;
+        }
+        $detail['Tanggal Bayar'] = $trx->tanggal_bayar
+            ? $trx->tanggal_bayar->translatedFormat('d F Y')
+            : '-';
+
+        // Sisa tunggakan (DU & SPP boleh parsial → tampilkan sisa).
+        if ($trx->jenis === 'daftar_ulang' && $trx->referensi_id) {
+            $daftar = ReRegistrationPayment::find($trx->referensi_id);
+            if ($daftar) {
+                $detail['Sisa Tunggakan'] = $rp($daftar->sisa());
+            }
+        } elseif ($trx->jenis === 'spp' && isset($bill)) {
+            $detail['Sisa Tunggakan'] = $rp($bill->fresh()->sisa());
+        }
+
+        // Rekening tujuan sekolah (dari settings).
+        $rekening = trim(Setting::get('bank_sekolah', '').' '.Setting::get('rekening_sekolah', ''));
+        if ($rekening !== '') {
+            $atasNama = Setting::get('atas_nama', '');
+            $detail['Rekening Sekolah'] = $rekening.($atasNama ? ' a.n. '.$atasNama : '');
+        }
+
+        Mail::to($email)->send(new RegistrationNotification(
+            'Pembayaran '.$labelJenis.' Terverifikasi',
+            'Pembayaran '.$labelJenis.' atas nama '.($trx->student?->nama_lengkap ?? 'siswa').' telah berhasil diverifikasi oleh Admin. Berikut rincian transaksinya.',
+            $detail,
+        ));
     }
 }

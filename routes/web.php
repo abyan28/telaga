@@ -35,7 +35,15 @@ Route::get('/info', [PublicController::class, 'info'])->name('info');
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.submit');
 Route::post('/register', [RegisterController::class, 'register'])->name('register.submit');
+Route::post('/register/send-otp', [RegisterController::class, 'sendOtp'])->name('register.send-otp');
+Route::post('/register/verify-otp', [RegisterController::class, 'verifyOtp'])->name('register.verify-otp');
 Route::get('/register/check-username', [RegisterController::class, 'checkUsername'])->name('register.check-username');
+
+// --- Lupa sandi (T1.2) — Laravel password broker ---
+Route::get('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'showForm'])->name('password.request');
+Route::post('/forgot-password', [\App\Http\Controllers\Auth\ForgotPasswordController::class, 'sendLink'])->name('password.email');
+Route::get('/reset-password/{token}', [\App\Http\Controllers\Auth\ResetPasswordController::class, 'showForm'])->name('password.reset');
+Route::post('/reset-password', [\App\Http\Controllers\Auth\ResetPasswordController::class, 'reset'])->name('password.update');
 
 // --- Logout (harus login) ---
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');

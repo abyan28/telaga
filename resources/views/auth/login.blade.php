@@ -58,11 +58,11 @@
                         <input id="login-email" name="login" type="text" placeholder="email, no. HP, atau username" value="{{ old('login') }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" required>
                     </div>
                     <div class="space-y-1">
-                        <div class="flex justify-between items-center">
-                            <label for="login-password" class="text-xs font-bold text-slate-500 uppercase tracking-wide">Kata Sandi</label>
-                            <a href="#" class="text-2xs text-sky-600 font-semibold hover:underline">Lupa Sandi?</a>
-                        </div>
+                        <label for="login-password" class="text-xs font-bold text-slate-500 uppercase tracking-wide">Kata Sandi</label>
                         <x-password-input id="login-password" name="password" :required="true" placeholder="••••••••" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" />
+                        <div class="text-right pt-1">
+                            <a href="{{ route('password.request') }}" class="text-2xs text-sky-600 font-semibold hover:underline">Lupa Sandi?</a>
+                        </div>
                     </div>
                     <div class="flex items-center">
                         <input id="remember-me" name="remember" type="checkbox" class="h-4 w-4 text-sky-600 focus:ring-sky-500 border-slate-300 rounded">
@@ -90,6 +90,14 @@
                       x-data="{
                         username: @js(old('username')),
                         status: '',
+                        email: @js(old('email', '')),
+                        otpSent: false,
+                        otpVerified: false,
+                        otpCode: '',
+                        otpMsg: '',
+                        otpLoading: false,
+                        cooldown: 0,
+                        _timer: null,
                         check() {
                             this.status = '';
                             const u = this.username;
@@ -101,6 +109,42 @@
                                 const d = await r.json();
                                 this.status = d.available ? 'available' : 'taken';
                             }, 400);
+                        },
+                        async sendOtp() {
+                            if (!this.email || this.cooldown > 0) return;
+                            this.otpLoading = true; this.otpMsg = '';
+                            try {
+                                const r = await fetch('{{ route('register.send-otp') }}', {
+                                    method: 'POST',
+                                    headers: {'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'},
+                                    body: JSON.stringify({email: this.email})
+                                });
+                                const d = await r.json();
+                                if (r.status === 429) { this.otpMsg = d.error || 'Tunggu sebelum mengirim ulang.'; }
+                                else if (d.sent) {
+                                    this.otpSent = true; this.otpVerified = false; this.otpCode = '';
+                                    this.otpMsg = 'Kode terkirim. Cek inbox Anda.';
+                                    this.cooldown = 60;
+                                    clearInterval(this._timer);
+                                    this._timer = setInterval(() => { this.cooldown--; if (this.cooldown <= 0) clearInterval(this._timer); }, 1000);
+                                } else { this.otpMsg = 'Gagal mengirim kode.'; }
+                            } catch { this.otpMsg = 'Terjadi kesalahan jaringan.'; }
+                            this.otpLoading = false;
+                        },
+                        async verifyOtp() {
+                            if (!this.otpCode || this.otpCode.length !== 6) return;
+                            this.otpLoading = true; this.otpMsg = '';
+                            try {
+                                const r = await fetch('{{ route('register.verify-otp') }}', {
+                                    method: 'POST',
+                                    headers: {'Content-Type':'application/json','X-CSRF-TOKEN':'{{ csrf_token() }}','Accept':'application/json'},
+                                    body: JSON.stringify({email: this.email, code: this.otpCode})
+                                });
+                                const d = await r.json();
+                                if (d.verified) { this.otpVerified = true; this.otpMsg = ''; }
+                                else { this.otpMsg = d.error || 'Verifikasi gagal.'; }
+                            } catch { this.otpMsg = 'Terjadi kesalahan jaringan.'; }
+                            this.otpLoading = false;
                         }
                       }">
                     @csrf
@@ -117,8 +161,34 @@
                     </div>
                     <div class="space-y-1">
                         <label for="signup-email" class="text-xs font-bold text-slate-500 uppercase tracking-wide">Alamat Email</label>
-                        <input id="signup-email" name="email" type="email" placeholder="nama@email.com" value="{{ old('email') }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" required>
+                        <div class="flex gap-2">
+                            <input id="signup-email" name="email" type="email" placeholder="nama@email.com" x-model="email" class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" required :disabled="otpVerified">
+                            <button type="button" @click="sendOtp()" :disabled="!email || cooldown > 0 || otpLoading || otpVerified"
+                                    class="px-4 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white font-bold rounded-xl text-xs whitespace-nowrap transition-colors shrink-0">
+                                <span x-show="!otpSent || cooldown <= 0">Kirim Kode</span>
+                                <span x-show="otpSent && cooldown > 0" x-cloak x-text="cooldown + ' dtk'"></span>
+                            </button>
+                        </div>
                     </div>
+                    {{-- OTP input + verify --}}
+                    <div x-show="otpSent && !otpVerified" x-cloak class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Kode Verifikasi (6 digit)</label>
+                        <div class="flex gap-2">
+                            <input type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" x-model="otpCode" placeholder="Masukkan 6 digit kode"
+                                   class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm tracking-[0.5em] font-mono text-center focus:outline-none focus:border-sky-500">
+                            <button type="button" @click="verifyOtp()" :disabled="otpCode.length !== 6 || otpLoading"
+                                    class="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold rounded-xl text-xs whitespace-nowrap transition-colors shrink-0">
+                                Verifikasi
+                            </button>
+                        </div>
+                    </div>
+                    {{-- Feedback --}}
+                    <p x-show="otpMsg" x-cloak x-text="otpMsg" class="text-xs font-semibold"
+                       :class="otpVerified ? 'text-emerald-600' : 'text-slate-500'"></p>
+                    <p x-show="otpVerified" x-cloak class="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        Email terverifikasi
+                    </p>
                     <div class="space-y-1">
                         <label for="signup-password" class="text-xs font-bold text-slate-500 uppercase tracking-wide">Buat Kata Sandi</label>
                         <x-password-input id="signup-password" name="password" :required="true" placeholder="Minimal 8 karakter" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" />
@@ -127,9 +197,11 @@
                         <label for="signup-password-confirm" class="text-xs font-bold text-slate-500 uppercase tracking-wide">Ulangi Kata Sandi</label>
                         <x-password-input id="signup-password-confirm" name="password_confirmation" :required="true" placeholder="Ulangi kata sandi" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" />
                     </div>
-                    <button type="submit" class="w-full py-4 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl shadow-lg shadow-sky-100 hover:shadow-sky-200 transition-all hover:-translate-y-0.5">
+                    <button type="submit" :disabled="!otpVerified"
+                            class="w-full py-4 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-sky-100 hover:shadow-sky-200 transition-all hover:-translate-y-0.5">
                         Daftar Akun Baru
                     </button>
+                    <p x-show="!otpVerified" x-cloak class="text-3xs text-center text-slate-400">Verifikasi email dulu untuk mengaktifkan tombol daftar.</p>
                 </form>
             </div>
         </div>
