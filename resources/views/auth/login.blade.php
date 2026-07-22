@@ -123,7 +123,7 @@
                                 if (r.status === 429) { this.otpMsg = d.error || 'Tunggu sebelum mengirim ulang.'; }
                                 else if (d.sent) {
                                     this.otpSent = true; this.otpVerified = false; this.otpCode = '';
-                                    this.otpMsg = 'Kode terkirim. Cek inbox Anda.';
+                                    this.otpMsg = 'Kode terkirim. Cek inbox/spam Anda.';
                                     this.cooldown = 60;
                                     clearInterval(this._timer);
                                     this._timer = setInterval(() => { this.cooldown--; if (this.cooldown <= 0) clearInterval(this._timer); }, 1000);
