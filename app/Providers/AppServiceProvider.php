@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use App\Models\PaymentTransaction;
-use App\Models\RegistrationDocument;
 use App\Services\AuditLogService;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
@@ -47,13 +46,14 @@ class AppServiceProvider extends ServiceProvider
         View::composer('layouts.dashboard', function ($view): void {
             $badge = ['pendaftaran' => 0, 'daftar_ulang' => 0, 'spp' => 0];
             if (Auth::check() && Auth::user()->role === 'admin') {
-                // Bukti bayar pending dikelompokkan per jenis.
+                // Badge PPDB = jumlah PENDAFTAR yang masih perlu tindakan admin
+                // (1 per form): bayar belum diverif, berkas, atau seleksi belum tuntas.
                 $bayar = PaymentTransaction::where('status', 'pending')
+                    ->whereIn('jenis', ['daftar_ulang', 'spp'])
                     ->selectRaw('jenis, COUNT(*) as c')->groupBy('jenis')->pluck('c', 'jenis');
-                // Dokumen pendaftaran (KK/Akta/Foto) belum diverifikasi masuk badge PPDB.
-                $dok = RegistrationDocument::where('status', 'pending')->count();
                 $badge = [
-                    'pendaftaran' => (int) ($bayar['pendaftaran'] ?? 0) + $dok,
+                    'pendaftaran' => \App\Models\RegistrationForm::whereIn('status',
+                        ['menunggu_verifikasi', 'pembayaran_diverifikasi', 'diproses_seleksi'])->count(),
                     'daftar_ulang' => (int) ($bayar['daftar_ulang'] ?? 0),
                     'spp' => (int) ($bayar['spp'] ?? 0),
                 ];
@@ -61,9 +61,14 @@ class AppServiceProvider extends ServiceProvider
             $view->with('sidebarBadge', $badge);
         });
 
-        // Logo web (header & footer) dari CMS — dishare ke layout publik. Null = fallback "AK".
+        // Logo + data kontak/footer dari CMS (grup 'kontak') — dishare ke layout
+        // publik agar header & footer tidak hardcode. Satu query ambil semua konten
+        // grup kontak; logo tetap di key 'home.logo'. Null = fallback default view.
         View::composer('layouts.public', function ($view): void {
-            $view->with('siteLogo', \App\Models\SiteContent::where('key', 'home.logo')->value('value'));
+            $kontak = \App\Models\SiteContent::whereIn('grup', ['home', 'kontak'])
+                ->pluck('value', 'key');
+            $view->with('siteLogo', $kontak['home.logo'] ?? null);
+            $view->with('kontak', $kontak);
         });
     }
 }

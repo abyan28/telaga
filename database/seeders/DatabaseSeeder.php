@@ -90,5 +90,8 @@ class DatabaseSeeder extends Seeder
 
         // --- 6. Konten default halaman publik (CMS — rules.md §1.8) ---
         $this->call(SiteContentSeeder::class);
+
+        // --- 7. Daftar bank (T8.1) dari bank.csv ---
+        $this->call(BankSeeder::class);
     }
 }

@@ -107,16 +107,16 @@ class GuruTest extends TestCase
         [$user] = $this->makeGuru('gp@test.id', 'G-PW');
 
         $this->actingAs($user)->post('/portal/guru/password', [
-            'username' => 'pak_guru', 'current_password' => 'salah', 'password' => 'barubaru8', 'password_confirmation' => 'barubaru8',
+            'username' => 'pak_guru', 'email' => 'gp@test.id', 'current_password' => 'salah', 'password' => 'barubaru8', 'password_confirmation' => 'barubaru8',
         ])->assertSessionHasErrors('current_password');
 
         // username < 6 ditolak
         $this->actingAs($user)->post('/portal/guru/password', [
-            'username' => 'abc', 'current_password' => 'x', 'password' => 'barubaru8', 'password_confirmation' => 'barubaru8',
+            'username' => 'abc', 'email' => 'gp@test.id', 'current_password' => 'x', 'password' => 'barubaru8', 'password_confirmation' => 'barubaru8',
         ])->assertSessionHasErrors('username');
 
         $this->actingAs($user)->post('/portal/guru/password', [
-            'username' => 'pak_guru', 'current_password' => 'x', 'password' => 'barubaru8', 'password_confirmation' => 'barubaru8',
+            'username' => 'pak_guru', 'email' => 'gp@test.id', 'current_password' => 'x', 'password' => 'barubaru8', 'password_confirmation' => 'barubaru8',
         ])->assertRedirect();
         $this->assertTrue(Hash::check('barubaru8', $user->fresh()->password));
         $this->assertSame('pak_guru', $user->fresh()->username);

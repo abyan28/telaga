@@ -26,6 +26,17 @@ class SiteContent extends Model
     }
 
     /**
+     * URL logo web (header/footer/favicon) dari CMS, atau null bila belum diunggah.
+     * Dipakai lintas layout (publik, dashboard, login) — satu sumber.
+     */
+    public static function logoUrl(): ?string
+    {
+        $path = static::get('home.logo');
+
+        return $path ? asset('storage/'.$path) : null;
+    }
+
+    /**
      * Menyimpan/memperbarui nilai konten (buat bila belum ada).
      */
     public static function set(string $key, ?string $value, array $attrs = []): void

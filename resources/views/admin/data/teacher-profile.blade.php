@@ -31,13 +31,15 @@
         <dl class="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             @foreach ([
                 'NUPTK' => $teacher->nuptk ?? '-',
-                'Email' => $teacher->user?->email ?? '—',
-                'No. HP' => $teacher->no_hp ?? '-',
-                'Tempat, Tgl Lahir' => trim(($teacher->tempat_lahir ?? '-').', '.optional($teacher->tanggal_lahir)->translatedFormat('d F Y'), ', '),
                 'Jabatan' => $teacher->jabatan ?? '—',
+                'Jenis Kelamin' => ['L' => 'Laki-laki', 'P' => 'Perempuan'][$teacher->jenis_kelamin] ?? '-',
+                'Tempat, Tgl Lahir' => trim(($teacher->tempat_lahir ?? '-').', '.optional($teacher->tanggal_lahir)->translatedFormat('d F Y'), ', '),
+                'Mulai Mengajar' => optional($teacher->tanggal_mulai_mengajar)->translatedFormat('d F Y') ?: '—',
+                'No. HP' => $teacher->no_hp ?? '-',
+                'Email' => $teacher->user?->email ?? '—',
                 'Tampil di Web' => $teacher->tampil_di_web ? 'Ya' : 'Tidak',
-                'Alamat' => $alamat ?: '—',
                 'Riwayat Pendidikan' => $teacher->riwayat_pendidikan ?? '—',
+                'Alamat' => $alamat ?: '—',
             ] as $label => $val)
                 <div>
                     <dt class="text-slate-400 font-semibold uppercase tracking-wide text-3xs">{{ $label }}</dt>

@@ -78,7 +78,7 @@ class WaliAccountTest extends TestCase
     /** Wali dg flag true dipaksa ke form ganti-password; setelah ganti, flag clear & akses normal. */
     public function test_wali_forced_to_change_password(): void
     {
-        $wali = User::create(['username' => '081200000009', 'no_hp' => '081200000009', 'role' => 'ortu', 'password' => Hash::make('081200000009'), 'must_change_password' => true]);
+        $wali = User::create(['username' => 'wali9', 'no_hp' => '081200000009', 'email' => 'wali9@test.id', 'role' => 'ortu', 'password' => Hash::make('081200000009'), 'must_change_password' => true]);
         $this->completeOrtu($wali->id_users); // K2.1: profil lengkap agar gate profil tak ikut nge-block
 
         // Akses dashboard → diblok ke form ganti-password.

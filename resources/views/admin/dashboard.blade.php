@@ -82,6 +82,7 @@
                     {{-- Rincian jenis pembayaran yang perlu dikonfirmasi (mis. "1 daftar ulang, 3 SPP"). --}}
                     @php
                         $rincian = [];
+                        if ($ppdbBayarBelumVerif) $rincian[] = $ppdbBayarBelumVerif.' PPDB';
                         if ($pendingDaftarUlang) $rincian[] = $pendingDaftarUlang.' daftar ulang';
                         if ($pendingSpp) $rincian[] = $pendingSpp.' SPP';
                     @endphp

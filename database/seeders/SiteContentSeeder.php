@@ -39,10 +39,13 @@ class SiteContentSeeder extends Seeder
             ['info.biaya_spp_desc', 'Iuran rutin bulanan untuk menunjang kegiatan operasional belajar anak di kelas.', 'info', 'Deskripsi SPP', 'textarea'],
             // Kontak / footer
             ['kontak.nama_sekolah', 'RA Al Kautsar', 'kontak', 'Nama sekolah', 'text'],
+            ['kontak.sub_nama', 'Yayasan Al Kautsar Puri Kosambi', 'kontak', 'Sub-nama (di bawah logo header)', 'text'],
+            ['kontak.deskripsi_footer', 'Pendidikan anak usia dini berbasis nilai-nilai keislaman yang membentuk akhlak mulia, kemandirian, dan kecerdasan anak sejak usia dini.', 'kontak', 'Deskripsi singkat (footer)', 'textarea'],
             ['kontak.alamat', 'Jl. Pendidikan No. 1, Bandung', 'kontak', 'Alamat', 'textarea'],
             ['kontak.telepon', '022-1234567', 'kontak', 'Telepon', 'text'],
             ['kontak.email', 'info@telaga.sch.id', 'kontak', 'Email', 'text'],
             ['kontak.jam_operasional', 'Senin–Jumat, 07.00–14.00 WIB', 'kontak', 'Jam operasional', 'text'],
+            ['kontak.copyright', 'Hak cipta dilindungi undang-undang.', 'kontak', 'Teks hak cipta (footer)', 'text'],
         ];
         foreach ($contents as [$key, $value, $grup, $label, $tipe]) {
             SiteContent::updateOrCreate(['key' => $key], compact('value', 'grup', 'label', 'tipe'));

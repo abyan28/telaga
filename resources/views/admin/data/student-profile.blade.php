@@ -25,6 +25,7 @@
         <dl class="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             @foreach ([
                 'NIK' => $student->nik, 'NISN' => $student->nisn ?? '—',
+                'NIS' => $student->nis ?? '—', 'Angkatan' => $student->angkatan ?? '—',
                 'Jenis Kelamin' => ['L' => 'Laki-laki', 'P' => 'Perempuan'][$student->jenis_kelamin] ?? '-',
                 'Tempat, Tgl Lahir' => $student->tempat_lahir.', '.optional($student->tanggal_lahir)->translatedFormat('d F Y'),
                 'Kelas' => $student->schoolClass?->nama_kelas ?? 'Belum Terbagi',

@@ -59,8 +59,15 @@
                             </td>
                             <td class="py-3 text-right font-bold text-slate-900">Rp {{ number_format((int) $tx->jumlah, 0, ',', '.') }}</td>
                             <td class="py-3 text-right">
-                                @if ($tx->bukti_path)
-                                    <a href="{{ asset('storage/'.$tx->bukti_path) }}" target="_blank" class="text-4xs font-bold text-indigo-600 hover:underline">Lihat Bukti</a>
+                                @if ($tx)
+                                    <button type="button" onclick="openBerkas('{{ asset('storage/'.$tx->bukti_path) }}')"
+                                            class="inline-flex w-9 h-9 rounded border border-slate-200 overflow-hidden hover:border-indigo-400 transition-colors items-center justify-center bg-slate-50">
+                                        @if (preg_match('/\.(jpe?g|png|gif|webp)$/i', $tx->bukti_path))
+                                            <img src="{{ asset('storage/'.$tx->bukti_path) }}" class="w-full h-full object-cover" alt="Bukti">
+                                        @else
+                                            <span class="text-3xs font-black text-rose-500">PDF</span>
+                                        @endif
+                                    </button>
                                 @else <span class="text-4xs text-slate-300">-</span> @endif
                             </td>
                             <td class="py-3 text-right">

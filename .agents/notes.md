@@ -637,9 +637,9 @@ Dikelompokkan per tema. Prioritas kasar: BUG dulu → validasi → UX → fitur 
           Final sesi: 116 passed (455 assertions), build ✓.
 
     L3. Data wali
-        - [L3.1] Alamat diisi di profil wali (bukan tiap form pendaftaran). CLASH C10: alamat skrg di students — DISKUSI dulu.
-        - [L3.2] Auto-create akun wali siswa lama dr NIK→username, NISN→password +paksa ganti. RISIKO identifier publik — DISKUSI.
-        - [L3.3] [=K10.5] Halaman Data Orang Tua — nunggu L1.1 final.
+        - [L3.1] [SOLVED — User menyatakan tidak perlu dikerjakan 2026-07-22]
+        - [L3.2] [SOLVED — User menyatakan tidak perlu dikerjakan 2026-07-22]
+        - [L3.3] [DONE 2026-07-22] [=K10.5] Halaman Data Orang Tua (master ortu + filter/rowspan).
 
     L4. Akun & manajemen
         - [L4.1] [DONE 2026-07-20] Halaman Data Akun: datatable SEMUA role (admin/wali/guru) + search (username/email/HP) + filter role + filter status (aktif/nonaktif) + paginate 25 + edit (username/email/no_hp/password) modal + toggle nonaktif/aktif.
@@ -683,7 +683,17 @@ Dikelompokkan per tema. Prioritas kasar: BUG dulu → validasi → UX → fitur 
           Template database/data/template-import-murid.csv (tombol unduh). PITFALL: enum kosong (sudah_mengaji/pernah_belajar/
           ukuran_baju) & kolom unik kosong (nis/nisn/nama_panggilan) di-normalkan '' → null sebelum create (SQLite CHECK
           constraint tolak ''). Test ImportCsvTest x6. Total 134 passed (514).
-        - [L8.2] Export CSV/PDF data siswa + laporan keuangan SPP dg filter (kelas/TA/status/baru; per-siswa/ortu/bulan/periode).
+        - [L8.2] [SELESAI 2026-07-23] Export CSV/PDF data siswa + laporan SPP.
+          ReportController +6 method (studentsQuery/sppQuery + 4 export). Route admin.reports.students(.csv/.pdf) +
+          admin.reports.spp(.csv/.pdf). View admin/reports-students.blade (filter kelas/TA/status/angkatan/murid-baru) +
+          reports-spp.blade (filter siswa/kelas/TA/bulan/dari-sampai/status-bayar). PDF dompdf landscape (2 template baru).
+          Sidebar: "Laporan" dropdown (Data Murid + Laporan SPP) di atas "Audit Log" (rename). PITFALL: status_bayar
+          di-UPPERCASE middleware → strtolower() di controller. Test ReportExportTest x6. 139 passed (529).
+        - [L8.3] [SELESAI 2026-07-23] Kolom angkatan otomatis dari prefix NIS.
+          Migration add_angkatan_to_students (SMALLINT null). Student::nisToAngkatan() — substr(nis,12,2) → 20YY.
+          Trigger: generateNis (batch), storeStudent, updateStudent, importStudents (NIS menang > manual). Form
+          tambah/edit admin +field Angkatan. Profil siswa +NIS+Angkatan. Laporan data siswa +filter angkatan distinct DB.
+          IMPORT_COLUMNS +angkatan. PITFALL: closure generateNis butuh use($yy); $data['angkatan'] null-coalesce.
 
     L9. Deploy / email (blocked SMTP)
         - [L9.1] [=T1.1–T1.3] Verifikasi email daftar + lupa sandi + link di form.

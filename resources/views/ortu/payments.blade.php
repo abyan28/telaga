@@ -199,12 +199,7 @@
 
                 <div class="space-y-1">
                     <label class="text-2xs font-bold text-slate-500 uppercase tracking-wide">Bank Asal Transfer</label>
-                    <input list="daftar-bank-spp" name="bank_asal" placeholder="Ketik untuk mencari bank/e-wallet…" autocomplete="off" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500">
-                    <datalist id="daftar-bank-spp">
-                        @foreach ($daftarBank as $bank)
-                            <option value="{{ $bank }}">
-                        @endforeach
-                    </datalist>
+                    <x-bank-picker :banks="$daftarBank" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500" />
                 </div>
 
                 <div class="space-y-1">

@@ -1,6 +1,6 @@
 @extends('layouts.public')
 
-@section('title', 'Beranda — ' . (\App\Models\SiteContent::get('kontak.nama_sekolah', 'RA Al Kautsar')))
+@section('title', (\App\Models\SiteContent::get('kontak.nama_sekolah', 'RA Al Kautsar')))
 
 @section('content')
 <!-- Hero Section -->

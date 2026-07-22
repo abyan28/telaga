@@ -49,7 +49,7 @@ class StatusController extends Controller
             'nomor' => Setting::get('rekening_sekolah', ''),
             'atas_nama' => Setting::get('atas_nama', ''),
         ];
-        $daftarBank = PaymentTransaction::daftarBank();
+        $daftarBank = \App\Models\Bank::daftarNama();
 
         return view('ortu.status', compact('forms', 'nominalPendaftaran', 'rekening', 'daftarBank'));
     }

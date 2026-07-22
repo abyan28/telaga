@@ -110,6 +110,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('portal/admin')->name('admin.'
     Route::post('/data/students/{student}/ortu-account', [MasterDataController::class, 'createOrtuAccount'])->name('students.ortu-account');
     Route::get('/data/teachers', [MasterDataController::class, 'teachers'])->name('data.teachers');
     Route::get('/data/teachers/{teacher}', [MasterDataController::class, 'showTeacher'])->name('teachers.show');
+    Route::get('/data/parents', [MasterDataController::class, 'parents'])->name('data.parents');
     Route::get('/data/classes', [MasterDataController::class, 'classes'])->name('data.classes');
     Route::post('/teachers', [MasterDataController::class, 'storeTeacher'])->name('teachers.store');
     Route::put('/teachers/{teacher}', [MasterDataController::class, 'updateTeacher'])->name('teachers.update');
@@ -142,6 +143,14 @@ Route::middleware(['auth', 'role:admin'])->prefix('portal/admin')->name('admin.'
     Route::get('/reports', [ReportController::class, 'index'])->name('reports');
     Route::get('/reports/export/csv', [ReportController::class, 'exportCsv'])->name('reports.csv');
     Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.pdf');
+    // L8.2: laporan data siswa
+    Route::get('/reports/students', [ReportController::class, 'students'])->name('reports.students');
+    Route::get('/reports/students/export/csv', [ReportController::class, 'exportStudentsCsv'])->name('reports.students.csv');
+    Route::get('/reports/students/export/pdf', [ReportController::class, 'exportStudentsPdf'])->name('reports.students.pdf');
+    // L8.2: laporan SPP
+    Route::get('/reports/spp', [ReportController::class, 'spp'])->name('reports.spp');
+    Route::get('/reports/spp/export/csv', [ReportController::class, 'exportSppCsv'])->name('reports.spp.csv');
+    Route::get('/reports/spp/export/pdf', [ReportController::class, 'exportSppPdf'])->name('reports.spp.pdf');
 
     // CMS konten website publik (rules.md §1.8)
     Route::get('/content', [SiteContentController::class, 'index'])->name('content');

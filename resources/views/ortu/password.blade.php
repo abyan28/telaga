@@ -29,15 +29,15 @@
             @csrf
             <div class="space-y-1">
                 <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Password Saat Ini</label>
-                <input type="password" name="current_password" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500">
+                <x-password-input name="current_password" :required="true" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500" />
             </div>
             <div class="space-y-1">
                 <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Password Baru (min 8)</label>
-                <input type="password" name="password" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500">
+                <x-password-input name="password" :required="true" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500" />
             </div>
             <div class="space-y-1">
                 <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Konfirmasi Password Baru</label>
-                <input type="password" name="password_confirmation" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500">
+                <x-password-input name="password_confirmation" :required="true" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500" />
             </div>
             <button type="submit" class="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl shadow-md text-xs transition-colors">Simpan Password Baru</button>
         </form>

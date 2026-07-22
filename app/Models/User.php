@@ -112,4 +112,15 @@ class User extends Authenticatable
     {
         return $this->ortu?->namaWali() ?? $this->teacher?->nama ?? $this->username;
     }
+
+    /**
+     * Akun ortu auto-create (T9.1) belum disetup: email kosong atau username
+     * masih = no_hp (belum diubah wali). Gate wajib isi pengaturan akun dulu.
+     * ponytail: username===no_hp sbg proxy "belum diubah"; add flag kolom kalau proxy kelewat.
+     */
+    public function needsAccountSetup(): bool
+    {
+        return $this->role === 'ortu'
+            && ($this->email === null || $this->username === $this->no_hp);
+    }
 }

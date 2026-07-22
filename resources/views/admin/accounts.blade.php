@@ -137,7 +137,7 @@
                     <input type="text" name="name" required @input="checkU($event.target.value)" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
                 </div>
                 <div><label class="text-2xs font-bold text-slate-500 uppercase">Email</label><input type="email" name="email" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500"></div>
-                <div><label class="text-2xs font-bold text-slate-500 uppercase">Password (min 8)</label><input type="password" name="password" required class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500"></div>
+                <div><label class="text-2xs font-bold text-slate-500 uppercase">Password (min 8)</label><x-password-input name="password" :required="true" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500" /></div>
                 <button type="submit" :disabled="uStatus === 'taken' || uStatus === 'invalid'" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs">Simpan Admin</button>
             </form>
         </div>
@@ -157,7 +157,7 @@
                 </div>
                 <div><label class="text-2xs font-bold text-slate-500 uppercase">Email</label><input type="email" name="email" x-model="editEmail" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500"></div>
                 <div><label class="text-2xs font-bold text-slate-500 uppercase">No. HP</label><input type="text" name="no_hp" inputmode="numeric" pattern="[0-9]{9,14}" x-model="editNoHp" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500"></div>
-                <div><label class="text-2xs font-bold text-slate-500 uppercase">Password (kosongi jika tidak diganti)</label><input type="password" name="password" minlength="8" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500"></div>
+                <div><label class="text-2xs font-bold text-slate-500 uppercase">Password (kosongi jika tidak diganti)</label><x-password-input name="password" minlength="8" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-sky-500" /></div>
                 <button type="submit" :disabled="uStatus === 'taken' || uStatus === 'invalid'" class="w-full py-3 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs">Simpan Perubahan</button>
             </form>
         </div>

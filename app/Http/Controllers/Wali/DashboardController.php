@@ -84,11 +84,11 @@ class DashboardController extends Controller
      */
     public function accountForm(): View
     {
-        return view('ortu.account', ['ortu' => Auth::user()->ortu]);
+        return view('ortu.account', ['ortu' => Auth::user()->ortu, 'user' => Auth::user()]);
     }
 
     /**
-     * Memperbarui email & no. HP akun wali (T2.3).
+     * Memperbarui email, no. HP, & username akun wali (T2.3).
      *
      * Email & no_hp unik lintas users; no_hp juga disimpan di profil ortu
      * (unique index terpisah). Keduanya diselaraskan dalam satu transaksi;
@@ -99,6 +99,8 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         $data = $request->validate([
+            'username' => ['required', 'string', 'min:3', 'max:30', 'regex:/^[a-zA-Z0-9_.]+$/',
+                Rule::unique('users', 'username')->ignore($user->id_users, 'id_users')],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id_users, 'id_users')],
             'no_hp' => [
                 ...ValidationRules::noHp(false),
@@ -106,11 +108,13 @@ class DashboardController extends Controller
             ],
         ], [
             ...ValidationRules::messages(),
+            'username.regex' => 'Username hanya boleh huruf, angka, underscore (_) dan titik (.), tanpa spasi.',
+            'username.unique' => 'Username ini sudah digunakan.',
             'email.unique' => 'Email ini sudah digunakan.',
             'no_hp.unique' => 'Nomor HP ini sudah digunakan.',
         ]);
 
-        $user->update(['email' => $data['email'], 'no_hp' => $data['no_hp'] ?? null]);
+        $user->update($data);
 
         return back()->with('success', 'Pengaturan akun berhasil diperbarui.');
     }

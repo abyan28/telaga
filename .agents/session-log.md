@@ -1,7 +1,90 @@
 # Session Log — TELAGA AL KAUTSAR
 
 > Dokumen konteks untuk sesi Hermes/agent BARU. Baca ini + `tasklist.md` dulu sebelum kerja.
-> Terakhir diperbarui: 2026-07-23 (Sesi L8.1 import CSV — **SELESAI** — 134 test passed, build ✓)
+> Terakhir diperbarui: 2026-07-22 (Sesi ini — +L3.3 Data Orang Tua; CMS konten/footer, badge PPDB, bank DB, show/hide pw, username ortu, account-setup gate — **SELESAI** — 141 test passed, build ✓)
+
+> ## Sesi 2026-07-22b — L3.3 Data Orang Tua (SELESAI)
+> Verified: 141 test passed (540 assertions), npm run build ✓, view:cache ✓.
+> - `MasterDataController@parents`: list ortu (whereHas students) + 3 filter (cari ayah/ibu/anak, kelas, status murid) + paginate 25. Eager students.schoolClass.homeroomTeacher. Route `admin.data.parents` (di grup data.* sebelum wildcard).
+> - View `admin/data/parents.blade.php`: tabel rowspan sejati (rowspan=$n kolom ayah/ibu/no_hp-ibu/pekerjaan-ayah/aksi; anak per-baris). Kolom: Ayah·Ibu·Nama Anak·No.HP(Ibu)·Pekerjaan(Ayah)·Wali Kelas·Kelas·Status·Aksi.
+> - Sidebar desktop+mobile: "Data Orang Tua" antara Konten Web & Pengaturan Sistem.
+> - Aksi Profil → reuse `admin.students.show` (tab profil ortu). Edit → redirect Data Murid + search. ponytail: no dedicated edit-ortu page, add when diminta.
+> - Test `test_parents_page_lists_and_filters`.
+> - L3.1/L3.2 sudah solved (konfirmasi user), tak dikerjakan.
+
+> ## Sesi 2026-07-22 — CMS Konten + Bug Fixes + UX (SELESAI)
+> Verified: 140 test passed (533 assertions), npm run build ✓, view:cache ✓.
+>
+> ### CMS Konten: footer/header hardcode → DB
+> - `AppServiceProvider` View::composer `layouts.public`: inject seluruh grup `home`+`kontak` sbg `$kontak` array (1 query). `$siteLogo` tetap.
+> - `layouts/public.blade.php`: nama sekolah, sub-nama, deskripsi footer, alamat, telepon, email, jam operasional, copyright → dari `$kontak[...]`. Jam operasional tampil kondisional (bila terisi).
+> - `SiteContentSeeder` +4 key: `kontak.sub_nama`, `kontak.deskripsi_footer`, `kontak.copyright` (+ `kontak.jam_operasional` sudah ada). Default = teks hardcode lama.
+>
+> ### Logo & Favicon
+> - `SiteContent::logoUrl()` — helper statis, URL logo dari `home.logo` atau null. Dipakai lintas 3 layout.
+> - `layouts/dashboard.blade.php`: sidebar desktop+mobile pakai logo dari CMS (fallback "AK"). Favicon `<link rel="icon">` di `<head>`.
+> - `auth/login.blade.php`: header brand pakai logo CMS. Favicon.
+> - `layouts/public.blade.php`: favicon.
+>
+> ### Bug Fix PPDB: status form tidak maju setelah verifikasi bayar
+> - Root cause: `PaymentVerificationService::syncBill()` tidak menangani `jenis=pendaftaran`. Form tetap `menunggu_verifikasi` setelah admin verifikasi.
+> - Fix: tambah cabang `pendaftaran` di `syncBill()` — approve → `pembayaran_diverifikasi`; reject → `menunggu_bukti`. Load relasi segar (`->first()`) hindari stale cache.
+> - Test: `test_registration_payment_verification_advances_form` (AdminWorkflowTest).
+>
+> ### Badge PPDB: per-pendaftar (1 per form), bukan per-item
+> - `AppServiceProvider` composer `layouts.dashboard`: `badge[pendaftaran]` = count form status ∈ {menunggu_verifikasi, pembayaran_diverifikasi, diproses_seleksi}. Buang hitung transaksi+dokumen lama. `RegistrationDocument` import dihapus.
+> - `DashboardController`: `pendingPpdb` = count form. `pendingPembayaran` += `ppdbBayarBelumVerif` (form menunggu_verifikasi, 1 per pendaftar). Card breakdown +rincian "N PPDB".
+> - Test `test_dashboard_split_and_sidebar_badge` diperbarui.
+>
+> ### Bank: CSV → tabel DB + Alpine searchable dropdown
+> - Migration `create_banks_table` (id, nama unique, no timestamps). `BankSeeder` impor 110 bank dari bank.csv via upsert. `DatabaseSeeder` +BankSeeder.
+> - Model `Bank::daftarNama()` ganti `PaymentTransaction::daftarBank()` (dihapus). `bank.csv` dihapus dari repo.
+> - Component `<x-bank-picker :banks="$daftarBank">` — Alpine: input teks + list filter max 50, klik pilih, nilai bebas diterima. `@once` untuk script. Dipakai ortu/status + ortu/payments (ganti `<input list>`).
+>
+> ### Show/hide password
+> - Component `<x-password-input name="..." ...>` — Alpine `{show:false}`, toggle eye/eye-off SVG, `tabindex="-1"` pada tombol.
+> - Diterapkan di: `auth/login` (login+signup), `ortu/password` (3 field), `guru/password` (3 field), `admin/accounts` (create+edit).
+>
+> ### Username + cek realtime di pengaturan akun ortu
+> - `DashboardController::updateAccount` tambah validasi `username` (Rule::unique ignore self, regex `[a-zA-Z0-9_.]`, min:3).
+> - `accountForm` inject `$user` ke view.
+> - `ortu/account.blade.php` ditulis ulang: tambah field username + Alpine `fetch /register/check-username?ignore=$user->id_users` (endpoint existing, debounce 500ms). Tombol disabled saat taken/invalid.
+>
+> ### Account-setup gate: akun auto-create ortu wajib isi username+email sebelum profil
+> - `User::needsAccountSetup()` — proxy: email null OR username===no_hp.
+> - `RequireOrtuProfile` middleware diperluas 3 langkah berurutan: (1) ForceChangePassword existing (ganti pw), (2) needsAccountSetup → redirect ortu.account, (3) isComplete → redirect ortu.profile.
+> - ponytail: username===no_hp sbg proxy; add flag kolom jika proxy miss edge case nyata.
+>
+> ### Email wajib saat first login guru
+> - `GuruController::updatePassword`: tambah validasi+simpan `email` (required, unique ignore self).
+> - `guru/password.blade.php` tab password: tambah field Email (required) setelah username.
+> - Test `test_guru_change_password` diperbarui (+email field).
+
+
+>
+> ## Sesi 2026-07-23b — L8.2 export data siswa + laporan SPP + L8.3 angkatan (SELESAI)
+> Verified: 139 test passed (529), npm run build ✓, view:cache ✓.
+> **L8.2** (reuse pola ReportController — nol library baru):
+> - ReportController +6 method: students/exportStudentsCsv/exportStudentsPdf + spp/exportSppCsv/exportSppPdf + 2 private
+>   query helper (studentsQuery/sppQuery, pola ->when()). Route admin.reports.students(.csv/.pdf) + .spp(.csv/.pdf).
+> - View admin/reports-students.blade + reports-spp.blade + reports/students-pdf.blade + spp-pdf.blade (dompdf landscape).
+> - Sidebar: entry "Laporan" DROPDOWN (Data Murid + Laporan SPP) di atas "Audit Log" (rename dari "Laporan & Audit Log").
+>   Desktop dropdown + mobile 2 link. Halaman admin.reports lama tinggal audit.
+> - CSV siswa 33 kolom (eager ortu + schoolClass.homeroomTeacher; alamat dari ortu). CSV SPP 11 kolom (tanggal/waktu dari
+>   transaksi terakhir diverifikasi, pola daftar-ulang).
+> - Filter SPP: dropdown siswa perorangan (id_student), kelas, TA, bulan, periode dari/sampai, status_bayar (lunas/belum).
+> - **PITFALL**: status_bayar di-UPPERCASE oleh UppercaseInput middleware → compare pakai strtolower() di controller.
+> **L8.3** (kolom angkatan otomatis dari prefix NIS):
+> - Migration add_angkatan_to_students (SMALLINT nullable). Student +fillable+cast+helper nisToAngkatan(nis) → 4-digit
+>   (NSM 12 + YY 2 + urut 3; substr(nis,12,2) → 20YY). Kosong/pendek → null.
+> - 3 trigger: generateNis (angkatan=20YY saat batch), storeStudent + updateStudent + importStudents (NIS menang,
+>   fallback input manual). Form tambah/edit murid +field Angkatan ("auto dari NIS bila diisi"). blank Alpine + $row +angkatan.
+> - Profil siswa +baris NIS+Angkatan. Laporan data siswa +filter dropdown angkatan (distinct DB); studentsQuery +when(angkatan).
+> - IMPORT_COLUMNS +angkatan (opsional; NIS override). studentRules +angkatan nullable|integer|min:2000|max:2099.
+> - **PITFALL**: closure generateNis butuh `use ($yy)`; $data['angkatan'] di import pakai null-coalesce (kolom bisa absen).
+> - Test ReportExportTest x6. nisToAngkatan self-check ✓.
+>
+> ---
 >
 > ## Sesi 2026-07-23 — L8.1 Import CSV massal murid lama (SELESAI)
 > Verified: 134 test passed (514), npm run build ✓, view:cache ✓.
@@ -311,7 +394,7 @@ Sistem Informasi Sekolah **RA Al Kautsar**, nama aplikasi **"TELAGA AL KAUTSAR"*
   Param `$id` (PK) WAJIB agar nama kembar tak saling menimpa; store baru create record dulu → upload pakai PK → update foto_path.
   updateTeacher (edit guru CRUD) SEBELUMNYA tak menyimpan foto (bug 2026-07-19, kini diperbaiki). Ditampilkan lewat
   komponen `<x-avatar :path :name :size>` (foto||inisial). Folder `profil/` ikut `storage:reset`.
-- **`database/data/bank.csv`** (git-tracked): sumber daftar bank dropdown (T8.1), dibaca `PaymentTransaction::daftarBank()` via `database_path('data/bank.csv')`. Satu kolom `nama_bank` (kolom `sandi_bank` dibuang 2026-07-17 — tak dipakai). Sengaja TIDAK masuk DB (statis). Ikut ter-deploy.
+- **Bank dropdown** (2026-07-22): `database/data/bank.csv` **DIHAPUS** — data sudah di tabel `banks` (migration `2026_07_22_005356`). `Bank::daftarNama()` ganti `PaymentTransaction::daftarBank()`. Component `<x-bank-picker>` (Alpine searchable) di ortu/status + ortu/payments.
 - **`database/data/wilayah_indonesia.sql`**: kolom `latitude`/`longitude` di `t_kecamatan`/`t_kelurahan` dibuang 2026-07-17 (tak dipakai; `t_kota`/`t_provinsi` memang tak punya). Tabel kini `id, nama` saja.
 - Rekening bank sekolah disimpan di `settings` (bank_sekolah/rekening_sekolah/atas_nama), diatur admin di tab Set Pembayaran.
 - Halaman `admin/payments` masih minimal (verifikasi bayar utamanya lewat `admin/registration-detail`). Verifikasi SPP kini punya tab sendiri (`admin.spp`).

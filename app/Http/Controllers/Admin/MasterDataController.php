@@ -126,6 +126,35 @@ class MasterDataController extends Controller
     }
 
     /**
+     * L3.3: Data Orang Tua — daftar ortu (punya ≥1 anak) + filter kelas/status murid + search.
+     * Rowspan per-anak di view; ortu diulang bila >1 anak.
+     */
+    public function parents(Request $request): View
+    {
+        $cari   = trim((string) $request->query('cari'));
+        $kelas  = $request->query('kelas');
+        $status = $request->query('status'); // ''=semua, aktif/nonaktif/lulus/dropout
+
+        $parents = OrangTua::with([
+                'students.schoolClass.homeroomTeacher',
+            ])
+            ->whereHas('students') // hanya ortu yang punya anak
+            ->when($cari, fn ($q) => $q->where(fn ($w) => $w
+                ->where('ayah_nama', 'like', "%{$cari}%")
+                ->orWhere('ibu_nama', 'like', "%{$cari}%")
+                ->orWhereHas('students', fn ($s) => $s->where('nama_lengkap', 'like', "%{$cari}%"))))
+            ->when($kelas, fn ($q) => $q->whereHas('students', fn ($s) => $s->where('id_class', $kelas)))
+            ->when($status, fn ($q) => $q->whereHas('students', fn ($s) => $s->where('status', $status)))
+            ->orderBy('ibu_nama')
+            ->paginate(25)
+            ->withQueryString();
+
+        $classes = SchoolClass::orderBy('nama_kelas')->get(['id_classes', 'nama_kelas']);
+
+        return view('admin.data.parents', compact('parents', 'classes', 'cari', 'kelas', 'status'));
+    }
+
+    /**
      * Profil siswa (T5.3): biodata + riwayat tagihan SPP & daftar ulang + transaksi.
      */
     public function showStudent(Student $student): View
@@ -169,6 +198,7 @@ class MasterDataController extends Controller
         $rules['nik'] = ['required', 'digits:16', $nik];
         $rules['nisn'] = ['nullable', 'digits:10', $nisn];
         $rules['nis'] = ['nullable', 'digits_between:15,18', $nis];
+        $rules['angkatan'] = ['nullable', 'integer', 'min:2000', 'max:2099'];
         $rules['id_class'] = ['nullable', 'exists:classes,id_classes'];
         $rules['status'] = ['required', 'in:aktif,lulus,nonaktif'];
 
@@ -195,6 +225,8 @@ class MasterDataController extends Controller
         $data['id_academic_year'] = AcademicYear::where('is_aktif', true)->value('id_academic_years');
         $data['nisn'] = $data['nisn'] ?? null;
         $data['nis'] = $data['nis'] ?? null;
+        // L8.3: angkatan auto dari prefix NIS bila NIS diisi; else pakai input manual.
+        $data['angkatan'] = Student::nisToAngkatan($data['nis']) ?? ($data['angkatan'] ?? null);
         $foto = $request->file('foto'); // simpan setelah create agar folder pakai PK (nama kembar)
         unset($data['foto']);
 
@@ -258,6 +290,8 @@ class MasterDataController extends Controller
         ]);
         $data['nisn'] = $data['nisn'] ?? null;
         $data['nis'] = $data['nis'] ?? null;
+        // L8.3: angkatan auto dari NIS; fallback ke input manual; fallback ke nilai lama.
+        $data['angkatan'] = Student::nisToAngkatan($data['nis']) ?? ($data['angkatan'] ?? $student->angkatan);
         // Ganti foto (hapus lama agar tak menyampah); kosong = pertahankan foto lama.
         if ($request->hasFile('foto')) {
             if ($student->foto_path) {
@@ -625,7 +659,7 @@ class MasterDataController extends Controller
         'nama_lengkap', 'nama_panggilan', 'nik', 'nis', 'nisn',
         'jenis_kelamin', 'agama', 'tempat_lahir', 'tanggal_lahir',
         'anak_ke', 'jumlah_saudara', 'warga_negara', 'bahasa_keseharian',
-        'kondisi_kesehatan', 'tahun_ajaran', 'status', 'no_hp_ortu',
+        'kondisi_kesehatan', 'tahun_ajaran', 'status', 'angkatan', 'no_hp_ortu',
     ];
 
     /**
@@ -749,6 +783,8 @@ class MasterDataController extends Controller
                 : $taAktif;
             $valid['nisn'] = $valid['nisn'] ?? null;
             $valid['nis'] = $valid['nis'] ?? null;
+            // L8.3: angkatan auto dari NIS; fallback ke kolom angkatan di CSV bila ada.
+            $valid['angkatan'] = Student::nisToAngkatan($valid['nis']) ?? (($data['angkatan'] ?? '') !== '' ? (int) $data['angkatan'] : null);
 
             $student = Student::create($valid);
             if ($noHpOrtu) {

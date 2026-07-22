@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login / Sign Up — RA Al Kautsar</title>
 
+    @php $__favicon = \App\Models\SiteContent::logoUrl(); @endphp
+    @if ($__favicon)
+        <link rel="icon" href="{{ $__favicon }}">
+    @endif
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
@@ -17,9 +22,13 @@
     <!-- Header / Brand -->
     <header class="py-6 px-8 flex justify-between items-center w-full">
         <a href="{{ route('home') }}" class="flex items-center space-x-2.5 text-white">
-            <div class="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center font-bold text-lg">
-                AK
-            </div>
+            @if ($__favicon)
+                <img src="{{ $__favicon }}" alt="Logo" class="w-10 h-10 rounded-xl object-cover">
+            @else
+                <div class="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center font-bold text-lg">
+                    AK
+                </div>
+            @endif
             <span class="text-base font-bold tracking-tight">RA AL KAUTSAR</span>
         </a>
         <a href="{{ route('home') }}" class="text-xs font-semibold text-slate-400 hover:text-white transition-colors">
@@ -53,7 +62,7 @@
                             <label for="login-password" class="text-xs font-bold text-slate-500 uppercase tracking-wide">Kata Sandi</label>
                             <a href="#" class="text-2xs text-sky-600 font-semibold hover:underline">Lupa Sandi?</a>
                         </div>
-                        <input id="login-password" name="password" type="password" placeholder="••••••••" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" required>
+                        <x-password-input id="login-password" name="password" :required="true" placeholder="••••••••" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" />
                     </div>
                     <div class="flex items-center">
                         <input id="remember-me" name="remember" type="checkbox" class="h-4 w-4 text-sky-600 focus:ring-sky-500 border-slate-300 rounded">
@@ -112,11 +121,11 @@
                     </div>
                     <div class="space-y-1">
                         <label for="signup-password" class="text-xs font-bold text-slate-500 uppercase tracking-wide">Buat Kata Sandi</label>
-                        <input id="signup-password" name="password" type="password" placeholder="Minimal 8 karakter" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" required>
+                        <x-password-input id="signup-password" name="password" :required="true" placeholder="Minimal 8 karakter" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" />
                     </div>
                     <div class="space-y-1">
                         <label for="signup-password-confirm" class="text-xs font-bold text-slate-500 uppercase tracking-wide">Ulangi Kata Sandi</label>
-                        <input id="signup-password-confirm" name="password_confirmation" type="password" placeholder="Ulangi kata sandi" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" required>
+                        <x-password-input id="signup-password-confirm" name="password_confirmation" :required="true" placeholder="Ulangi kata sandi" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" />
                     </div>
                     <button type="submit" class="w-full py-4 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl shadow-lg shadow-sky-100 hover:shadow-sky-200 transition-all hover:-translate-y-0.5">
                         Daftar Akun Baru

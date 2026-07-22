@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Portal RA Al Kautsar')</title>
 
+    @php $__favicon = \App\Models\SiteContent::logoUrl(); @endphp
+    @if ($__favicon)
+        <link rel="icon" href="{{ $__favicon }}">
+    @endif
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
@@ -40,9 +45,14 @@
         <aside class="hidden md:flex flex-col w-72 bg-slate-900 text-slate-300 shrink-0 border-r border-slate-800">
             <!-- Sidebar Header -->
             <div class="flex items-center space-x-3 px-6 h-20 border-b border-slate-800">
-                <div class="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-sky-900/50">
-                    AK
-                </div>
+                @php $__logo = \App\Models\SiteContent::logoUrl(); @endphp
+                @if ($__logo)
+                    <img src="{{ $__logo }}" alt="Logo" class="w-10 h-10 rounded-xl object-cover shadow-lg shadow-sky-900/50">
+                @else
+                    <div class="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-sky-900/50">
+                        AK
+                    </div>
+                @endif
                 <div>
                     <span class="text-sm font-bold tracking-tight text-white block leading-tight">RA AL KAUTSAR</span>
                     <span class="text-xs text-sky-400 font-semibold tracking-wider uppercase block">Portal Sistem</span>
@@ -192,6 +202,11 @@
                         <span>Konten Web</span>
                     </a>
 
+                    <a href="{{ route('admin.data.parents') }}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('admin.data.parents') ? $aOn : $aOff }} transition-all">
+                        <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a3 3 0 10-2.5-4.5"/></svg>
+                        <span>Data Orang Tua</span>
+                    </a>
+
                     <a href="{{ route('admin.system') }}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('admin.system') ? $aOn : $aOff }} transition-all">
                         <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         <span>Pengaturan Sistem</span>
@@ -201,9 +216,23 @@
                         <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                         <span>Data Akun</span>
                     </a>
+                    {{-- Laporan (dropdown) --}}
+                    <div x-data="{ open: {{ request()->routeIs('admin.reports.students') || request()->routeIs('admin.reports.spp') ? 'true' : 'false' }} }">
+                        <button @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('admin.reports.students') || request()->routeIs('admin.reports.spp') ? $aOn : $aOff }} transition-all">
+                            <span class="flex items-center space-x-3">
+                                <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                <span>Laporan</span>
+                            </span>
+                            <svg class="w-4 h-4 transition-transform" :class="open && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div x-show="open" x-cloak class="mt-1 ml-4 pl-3 border-l border-slate-800 space-y-1">
+                            <a href="{{ route('admin.reports.students') }}" class="block px-4 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('admin.reports.students') ? 'text-white' : 'text-slate-400 hover:text-white' }}">Data Murid</a>
+                            <a href="{{ route('admin.reports.spp') }}" class="block px-4 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('admin.reports.spp') ? 'text-white' : 'text-slate-400 hover:text-white' }}">Laporan SPP</a>
+                        </div>
+                    </div>
                     <a href="{{ route('admin.reports') }}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('admin.reports') ? $aOn : $aOff }} transition-all">
                         <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                        <span>Laporan & Audit Log</span>
+                        <span>Audit Log</span>
                     </a>
                 @endif
 
@@ -301,9 +330,13 @@
             <!-- Mobile Sidebar Header -->
             <div class="flex items-center justify-between px-6 h-20 border-b border-slate-800">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
-                        AK
-                    </div>
+                    @if ($__logo ?? \App\Models\SiteContent::logoUrl())
+                        <img src="{{ $__logo ?? \App\Models\SiteContent::logoUrl() }}" alt="Logo" class="w-10 h-10 rounded-xl object-cover">
+                    @else
+                        <div class="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white font-bold text-lg">
+                            AK
+                        </div>
+                    @endif
                     <div>
                         <span class="text-sm font-bold tracking-tight text-white block leading-tight">RA AL KAUTSAR</span>
                     </div>
@@ -391,14 +424,23 @@
                     <a href="{{ route('admin.content') }}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('admin.content') ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800' }}">
                         <span>Konten Web</span>
                     </a>
+                    <a href="{{ route('admin.data.parents') }}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('admin.data.parents') ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800' }}">
+                        <span>Data Orang Tua</span>
+                    </a>
                     <a href="{{ route('admin.system') }}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('admin.system') ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800' }}">
                         <span>Pengaturan Sistem</span>
                     </a>
                     <a href="{{ route('admin.accounts') }}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('admin.accounts') ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800' }}">
                         <span>Data Akun</span>
                     </a>
+                    <a href="{{ route('admin.reports.students') }}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('admin.reports.students') ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800' }}">
+                        <span>Laporan — Data Murid</span>
+                    </a>
+                    <a href="{{ route('admin.reports.spp') }}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('admin.reports.spp') ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800' }}">
+                        <span>Laporan — SPP</span>
+                    </a>
                     <a href="{{ route('admin.reports') }}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('admin.reports') ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800' }}">
-                        <span>Laporan & Audit Log</span>
+                        <span>Audit Log</span>
                     </a>
                 @elseif ($activeRole === 'guru')
                     <a href="{{ route('guru.dashboard') }}" class="flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold {{ request()->routeIs('guru.dashboard') ? 'bg-teal-600 text-white' : 'text-slate-400 hover:bg-slate-800' }}">

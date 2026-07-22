@@ -181,35 +181,39 @@ class AdminGuruViewsTest extends TestCase
     }
 
     /**
-     * K6.3/K6.1: dashboard memisah pending PPDB vs Pembayaran (breakdown jenis),
-     * dan badge sidebar menampilkan jumlah per tab (bukti bayar + dokumen pending).
+     * K6.3/K6.1: badge PPDB = 1 per pendaftar (form yg masih butuh tindakan),
+     * badge Pembayaran = PPDB belum diverif + DU + SPP.
      */
     public function test_dashboard_split_and_sidebar_badge(): void
     {
         $admin = $this->admin();
-        $form = $this->seedRegistration();
-        $sid = $form->id_student;
+        $form  = $this->seedRegistration();
+        $sid   = $form->id_student;
 
-        // 1 bukti bayar pendaftaran + 1 daftar ulang + 1 SPP, semua pending.
-        foreach ([['pendaftaran', 150000], ['daftar_ulang', 200000], ['spp', 100000]] as [$jenis, $jml]) {
+        // Form status menunggu_verifikasi (1 pendaftar butuh tindakan + belum bayar terverif).
+        $form->update(['status' => 'menunggu_verifikasi']);
+
+        // 1 cicilan daftar ulang + 1 SPP pending (bukan pendaftaran).
+        foreach ([['daftar_ulang', 200000], ['spp', 100000]] as [$jenis, $jml]) {
             \App\Models\PaymentTransaction::create([
                 'id_student' => $sid, 'id_user' => $form->id_user, 'jenis' => $jenis,
                 'jumlah' => $jml, 'bukti_path' => 'x.jpg', 'status' => 'pending', 'tanggal_bayar' => '2026-08-01',
             ]);
         }
-        // 1 dokumen pendaftaran belum diverifikasi → masuk badge/card PPDB.
-        \App\Models\RegistrationDocument::create([
-            'id_registration_form' => $form->id_registration_forms, 'jenis' => 'kk',
-            'path' => 'kk.jpg', 'status' => 'pending',
-        ]);
 
         $res = $this->actingAs($admin)->get('/portal/admin')->assertOk();
-        // Card Pembayaran breakdown: 1 daftar ulang, 1 SPP.
-        $res->assertSee('Pending Pembayaran')->assertSee('1 daftar ulang, 1 SPP');
-        // Card PPDB = 1 bayar pendaftaran + 1 dokumen = 2.
+
+        // Card PPDB = 1 (form menunggu_verifikasi).
         $res->assertSee('Pending PPDB');
-        // Badge sidebar: PPDB=2, SPP=1 harus tampil.
-        $res->assertSee('bg-rose-500', false);
+
+        // Card Pembayaran rincian: 1 PPDB (form belum diverif) + 1 daftar ulang + 1 SPP.
+        $res->assertSee('1 PPDB')->assertSee('1 daftar ulang')->assertSee('1 SPP');
+
+        // Setelah bayar diverifikasi (form pembayaran_diverifikasi):
+        // PPDB masih 1 (belum selesai), tapi komponen PPDB di Pembayaran hilang.
+        $form->update(['status' => 'pembayaran_diverifikasi']);
+        $res2 = $this->actingAs($admin)->get('/portal/admin')->assertOk();
+        $res2->assertDontSee('1 PPDB');  // komponen PPDB di card Pembayaran hilang
     }
 
     /**
@@ -564,5 +568,31 @@ class AdminGuruViewsTest extends TestCase
         // B kini resmi di Data Murid; halaman calon murid kosong dari B.
         $this->actingAs($admin)->get('/portal/admin/data/students')->assertSee('BBB CALON');
         $this->actingAs($admin)->get('/portal/admin/calon-murid')->assertDontSee('BBB CALON');
+    }
+
+    /**
+     * L3.3: Data Orang Tua — list ortu punya anak, rowspan >1 anak, filter status murid.
+     */
+    public function test_parents_page_lists_and_filters(): void
+    {
+        $admin = $this->admin();
+        $u = User::create(['username' => 'wortu', 'email' => 'wo@test.id', 'role' => 'ortu', 'password' => Hash::make('x')]);
+        $ortu = OrangTua::create(['id_user' => $u->id_users, 'ada_ayah' => true, 'ada_ibu' => true,
+            'ayah_nama' => 'PAK BUDI', 'ibu_nama' => 'BU ANI', 'ibu_no_hp' => '628111', 'ayah_pekerjaan' => 'PNS']);
+        Student::create(['id_parent' => $ortu->id_parents, 'id_academic_year' => $this->ta->id_academic_years,
+            'nik' => '3400000000001001', 'nama_lengkap' => 'ANAK AKTIF', 'jenis_kelamin' => 'L',
+            'tempat_lahir' => 'BDG', 'tanggal_lahir' => '2020-01-01', 'status' => 'aktif']);
+        Student::create(['id_parent' => $ortu->id_parents, 'id_academic_year' => $this->ta->id_academic_years,
+            'nik' => '3400000000001002', 'nama_lengkap' => 'ANAK LULUS', 'jenis_kelamin' => 'P',
+            'tempat_lahir' => 'BDG', 'tanggal_lahir' => '2020-01-01', 'status' => 'lulus']);
+
+        // Tanpa filter: kedua anak + data ortu tampil.
+        $this->actingAs($admin)->get('/portal/admin/data/parents')
+            ->assertOk()->assertSee('PAK BUDI')->assertSee('BU ANI')
+            ->assertSee('ANAK AKTIF')->assertSee('ANAK LULUS');
+
+        // Filter status=lulus: ortu tetap muncul (punya anak lulus).
+        $this->actingAs($admin)->get('/portal/admin/data/parents?status=lulus')
+            ->assertOk()->assertSee('PAK BUDI');
     }
 }

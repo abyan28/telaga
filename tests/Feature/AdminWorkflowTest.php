@@ -96,6 +96,48 @@ class AdminWorkflowTest extends TestCase
     }
 
     /**
+     * P3.1 (regression): verifikasi bukti pembayaran PENDAFTARAN menggerakkan
+     * status form: menunggu_verifikasi -> pembayaran_diverifikasi (diverifikasi),
+     * dan kembali ke menunggu_bukti bila ditolak (wali unggah ulang).
+     */
+    public function test_registration_payment_verification_advances_form(): void
+    {
+        $admin = $this->admin();
+        $student = $this->makeStudent();
+        $service = app(PaymentVerificationService::class);
+        $form = RegistrationForm::create([
+            'id_user' => $student->ortu->id_user,
+            'id_student' => $student->id_students,
+            'id_academic_year' => $student->id_academic_year,
+            'status' => 'menunggu_verifikasi',
+        ]);
+        $trx = PaymentTransaction::create([
+            'id_student' => $student->id_students,
+            'id_registration_form' => $form->id_registration_forms,
+            'id_user' => $admin->id_users,
+            'jenis' => 'pendaftaran', 'jumlah' => 150000,
+            'bukti_path' => 'p.jpg', 'status' => 'pending', 'tanggal_bayar' => '2026-07-01',
+        ]);
+
+        $service->approve($trx, $admin->id_users);
+        $this->assertSame('pembayaran_diverifikasi', $form->fresh()->status);
+
+        // Tolak transaksi (skenario upload ulang): form mundur ke menunggu_bukti.
+        $trx2 = PaymentTransaction::create([
+            'id_student' => $student->id_students,
+            'id_registration_form' => $form->id_registration_forms,
+            'id_user' => $admin->id_users,
+            'jenis' => 'pendaftaran', 'jumlah' => 150000,
+            'bukti_path' => 'p2.jpg', 'status' => 'pending', 'tanggal_bayar' => '2026-07-02',
+        ]);
+        // Reset status di DB (bukan lewat instance lama yang atribut-nya tak dirty).
+        RegistrationForm::where('id_registration_forms', $form->id_registration_forms)
+            ->update(['status' => 'menunggu_verifikasi']);
+        $service->reject($trx2, $admin->id_users, 'Bukti buram');
+        $this->assertSame('menunggu_bukti', $form->fresh()->status);
+    }
+
+    /**
      * Menolak transaksi mengeluarkannya dari perhitungan saldo.
      */
     public function test_rejected_payment_not_counted(): void

@@ -457,9 +457,9 @@ class RegistrationController extends Controller
             ->orderByDesc('nis')->value('nis');
         $urut = $lastUrut ? ((int) substr($lastUrut, -3)) + 1 : 1;
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($calons, $prefiks, &$urut) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($calons, $prefiks, $yy, &$urut) {
             foreach ($calons as $s) {
-                $s->update(['nis' => $prefiks.str_pad($urut++, 3, '0', STR_PAD_LEFT), 'status' => 'aktif']);
+                $s->update(['nis' => $prefiks.str_pad($urut++, 3, '0', STR_PAD_LEFT), 'status' => 'aktif', 'angkatan' => (int) ('20'.$yy)]);
             }
         });
 

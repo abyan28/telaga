@@ -19,16 +19,27 @@ class RequireOrtuProfile
     {
         $user = Auth::user();
 
-        if ($user && $user->role === 'ortu' && ! $user->ortu?->isComplete()) {
-            // Hanya gate rute wali (daftar/bayar/dll). Rute guru/admin dibiarkan
-            // ke middleware role: (403) — jangan telan RBAC jadi redirect profil.
-            $route = $request->route()?->getName();
-            $allowed = ['ortu.profile', 'ortu.profile.update', 'ortu.account', 'ortu.account.update',
-                'ortu.password', 'ortu.password.update', 'logout'];
+        if ($user && $user->role === 'ortu') {
+            $route   = $request->route()?->getName();
+            $alwaysOk = ['ortu.password', 'ortu.password.update', 'logout'];
 
-            if (str_starts_with((string) $route, 'ortu.') && ! in_array($route, $allowed, true)) {
-                return redirect()->route('ortu.profile')
-                    ->with('success', 'Lengkapi profil Anda terlebih dahulu sebelum mendaftar.');
+            // Langkah 2: wajib isi username + email (akun auto-create T9.1).
+            if ($user->needsAccountSetup()) {
+                $allowed = [...$alwaysOk, 'ortu.account', 'ortu.account.update'];
+                if (str_starts_with((string) $route, 'ortu.') && ! in_array($route, $allowed, true)) {
+                    return redirect()->route('ortu.account')
+                        ->with('info', 'Lengkapi username dan email akun Anda terlebih dahulu.');
+                }
+            }
+
+            // Langkah 3: wajib lengkapi profil orang tua.
+            if (! $user->ortu?->isComplete()) {
+                $allowed = [...$alwaysOk, 'ortu.account', 'ortu.account.update',
+                    'ortu.profile', 'ortu.profile.update'];
+                if (str_starts_with((string) $route, 'ortu.') && ! in_array($route, $allowed, true)) {
+                    return redirect()->route('ortu.profile')
+                        ->with('success', 'Lengkapi profil Anda terlebih dahulu sebelum mendaftar.');
+                }
             }
         }
 

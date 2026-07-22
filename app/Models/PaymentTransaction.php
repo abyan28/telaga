@@ -31,27 +31,6 @@ class PaymentTransaction extends Model
     ];
 
     /**
-     * Daftar nama bank/e-wallet dari database/data/bank.csv (T8.1).
-     * Dipakai untuk dropdown "bank asal" saat wali unggah bukti transfer.
-     *
-     * @return array<int, string>
-     */
-    public static function daftarBank(): array
-    {
-        $path = database_path('data/bank.csv');
-        if (! is_file($path)) {
-            \Illuminate\Support\Facades\Log::warning('bank.csv tidak ditemukan di '.$path.' — dropdown bank kosong.');
-
-            return [];
-        }
-        // Ambil kolom pertama (nama bank), lewati baris header, unik + terurut.
-        $rows = array_map(fn ($l) => str_getcsv($l, ',', '"', '\\'), file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES));
-        $names = array_filter(array_map(fn ($r) => trim($r[0] ?? ''), array_slice($rows, 1)));
-
-        return array_values(array_unique($names));
-    }
-
-    /**
      * Route-model binding memakai primary key non-standar (rules.md §2).
      */
     public function getRouteKeyName(): string

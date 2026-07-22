@@ -594,3 +594,109 @@ CATATAN VERIFIKASI CEPAT
   `npm run build` OK; `php artisan migrate:fresh --seed` + DemoSeeder sukses;
   smoke test live MySQL: seluruh route 3 role → 200, RBAC lintas-role → 403,
   login (email + HP+NUPTK guru) → 302, login salah → 302 (bukan 500), tanpa error baru di log.
+
+daftar uji:
+pov ortu
+- buat akun  1
+- isi profil ortu 1
+- ganti password 1
+- ganti username 1
+- cek login dengan username dan password baru 1
+- daftar calon murid 1
+- upload bukti bayar ppdb 1
+- ke (ppdb) 1
+- harusnya verifikasi berhasil dan masuk tahap verifikasi berkas 1
+- ke (ppdb) 1
+- harusnya masuk ke proses seleksi 1
+- ke (ppdb) 1
+- harusnya status lulus/gagal 1
+- upload bukti bayar daful 1
+- ke (ppdb) 1
+- harusnya ada notif pembayaran berhasil/lunas 1
+- ke (ppdb) 1
+- upload bukti bayar spp 1
+- ke (pembayaran) 1
+- harusnya lunas 1
+- kembali ke (pembayaran) 1
+
+- done
+
+pov admin
+(ppdb)
+- verifikasi payments ppdb 1
+- kembali ke (pov ortu)
+- verifikasi berkas 1
+- kembali ke (pov ortu) 1
+- cek apakah calon murid masuk ke daftar ulang (harusnya belum masuk), daftar calon murid (harusnya belum masuk), dan data murid (harusnya belum masuk) 1
+- keputusan lulus/gagal 1
+- cek apakah calon murid masuk ke daftar ulang (harusnya masuk), daftar calon murid (harusnya belum masuk), dan data murid (harusnya belum masuk) 1
+- kembali ke (pov ortu) 1
+- verifikasi payments daful (>Rp. 0) 1
+- cek apakah calon murid masuk ke daftar ulang (harusnya masuk), daftar calon murid (harusnya masuk), dan data murid (harusnya belum masuk) 1
+- kembali ke (pov ortu) 1
+- tombol generate nis harusnya masih belum bisa diklik 1
+- ke (sistem) 1
+- tutup ppdb 1
+- batalkan salah satu pendaftar yg sudah bayar daftar ulang 1
+- harusnya kena denda 30% dari biaya daftar ulang. 1
+- tombol generate nis bisa diklik dan langsung klik aja 1
+- harusnya NIS calon murid sudah terisi dan masuk ke data murid. 1
+- ke (data guru) 1
+- buka pendaftaran ppdb, cek harusnya TA aktif beda dg TA PPDB.
+- ulangi langkah pertama dengan memperhatikan tahun ajarannya.
+- end
+
+(data guru)
+- tambah data guru 1
+- ke (pov guru) 1
+- lihat profil guru 1
+- edit data guru 1
+- nonaktifkan guru 1
+- ke (pov guru) 1
+- aktifkan kembali 1
+- ke (pov guru) 1
+- end
+
+(data kelas)
+- buat kelas dan tambahkan wali kelas 1
+- kembali ke (pov guru) 1
+- coba edit kelas 1
+- hapus kelas 1
+- ke (pov guru) 1
+- tambah kelas dan tambahkan wali kelas lagi 1
+- ke (pembayaran) 1
+- end
+
+(pembayaran)
+- generate spp 1
+- muncul tagihan semua siswa untuk bulan ini di halaman kelola pembayaran (perhatikan tahun ajarannya) 1
+- ke (pov ortu) 1
+- verifikasi bukti pembayaran spp 1
+- harusnya tagihan lunas 1
+- kembali ke (pov ortu) 1
+- set biaya pendaftaran, daftar ulang, spp 1
+- cek di halaman web depan bagian info apakah informasi biaya sudah sesuai 1
+- set rekening bank sekolah 1
+- ke (sistem)
+
+(sistem)
+- set nsm 1
+- set denda refund 1
+- kembali ke (ppdb) 1
+- next tahun ajaran ppdb 1
+- ke (ppdb)
+
+pov guru
+- cek coba login dengan username=no hp guru dan password=nuptk 1
+- harusnya bisa login dan disuruh wajib ganti password di tab ganti password dan wajib isi username dan email di tab akun pada halaman akun&profil. 1
+- ke (data kelas) 1
+- bisa lihat profil murid dan ortu dan edit profil murid 1
+- coba edit apa saja profil murid (cek apakah berhasil edit) 1
+- kembali ke (data guru) 1
+- harusnya gak bisa login 1
+- kembali ke (data guru) 1
+- harusnya bisa login lagi 1
+- kembali ke (data kelas) 1
+- harusnya tidak muncul list murid lagi 1
+- kembali ke (data kelas) 1
+- end

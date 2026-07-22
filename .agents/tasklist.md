@@ -1199,6 +1199,79 @@ Plan `boleh_cicil` per-wali DIBATALKAN — user konfirmasi update: pendaftaran &
   PITFALL: enum kosong & kolom unik kosong → null sebelum create (SQLite CHECK constraint).
   Test `ImportCsvTest` x6. 134 passed (514 assertions), build ✓.
 
+- [x] ✅ **L8.2 SELESAI** Export CSV/PDF data siswa + laporan SPP (2026-07-23).
+  ReportController +6 method + 2 private query helper (studentsQuery/sppQuery, pola ->when() existing).
+  Route admin.reports.students(.csv/.pdf) + admin.reports.spp(.csv/.pdf).
+  View admin/reports-students.blade + reports-spp.blade + 2 PDF blade (dompdf landscape).
+  Sidebar: "Laporan" DROPDOWN (Data Murid + Laporan SPP) di atas "Audit Log" (rename dari Laporan & Audit Log).
+  CSV siswa 33 kol (eager ortu+schoolClass.homeroomTeacher). CSV SPP 11 kol (tanggal/waktu dari transaksi diverifikasi).
+  PITFALL: status_bayar di-UPPERCASE oleh middleware → strtolower() sebelum compare.
+  Test ReportExportTest x6. 139 passed (529), build ✓.
+
+- [x] ✅ **L8.3 SELESAI** Kolom angkatan otomatis dari prefix NIS (2026-07-23).
+  Migration add_angkatan_to_students (SMALLINT null). Student +fillable+cast+nisToAngkatan().
+  Trigger otomatis: generateNis+storeStudent+updateStudent+importStudents (NIS > manual).
+  Form tambah/edit murid +field Angkatan. Profil siswa +NIS+Angkatan. Laporan siswa +filter angkatan.
+  PITFALL: closure generateNis butuh use($yy); $data['angkatan'] null-coalesce di import.
+  139 passed (529), build ✓.
+
 **SISA backlog WARISAN (belum masuk Fase L):**
 - Task 3.C — Deployment awal.
 - [L9.1] [=T1.1/T1.2/T1.3] Verifikasi email + lupa sandi (SMTP).
+
+---
+
+## Fase M — CMS Konten, Bug PPDB, UX (2026-07-22)
+
+- [x] ✅ **M1 SELESAI** CMS konten footer/header hardcode → DB (2026-07-22).
+  Footer+header `layouts/public.blade.php`: nama sekolah, sub-nama, deskripsi, alamat, telp, email, jam operasional, copyright → `$kontak[...]` dari View::composer (1 query grup home+kontak).
+  SiteContentSeeder +4 key (kontak.sub_nama, kontak.deskripsi_footer, kontak.copyright, jam_operasional sudah ada).
+  140 passed, build ✓.
+
+- [x] ✅ **M2 SELESAI** Logo & favicon dari CMS lintas 3 layout (2026-07-22).
+  `SiteContent::logoUrl()` helper statis. layouts/dashboard (sidebar desktop+mobile), auth/login (header brand), layouts/public — semua pakai logo CMS, fallback "AK". Favicon `<link rel="icon">` di `<head>` ketiga layout.
+
+- [x] ✅ **M3 SELESAI** Bug fix PPDB: status form tidak maju setelah verifikasi bayar (2026-07-22).
+  Root cause: `PaymentVerificationService::syncBill()` tidak handle `jenis=pendaftaran`.
+  Fix: cabang pendaftaran — approve→pembayaran_diverifikasi; reject→menunggu_bukti. `->first()` hindari stale relasi.
+  Test: `test_registration_payment_verification_advances_form`.
+
+- [x] ✅ **M4 SELESAI** Badge PPDB: 1 per pendaftar (bukan per-item) (2026-07-22).
+  AppServiceProvider: badge[pendaftaran] = count form status {menunggu_verifikasi,pembayaran_diverifikasi,diproses_seleksi}.
+  DashboardController: pendingPpdb = count form. pendingPembayaran += ppdbBayarBelumVerif (form menunggu_verifikasi).
+  Card breakdown dashboard +rincian "N PPDB". Test diperbarui.
+
+- [x] ✅ **M5 SELESAI** Bank: CSV → tabel DB + Alpine searchable dropdown (2026-07-22).
+  Migration create_banks_table. BankSeeder impor 110 bank via upsert. bank.csv dihapus.
+  `Bank::daftarNama()` ganti `PaymentTransaction::daftarBank()` (dihapus). DatabaseSeeder +BankSeeder.
+  Component `<x-bank-picker>` (Alpine: filter max 50, nilai bebas). ortu/status + ortu/payments diperbarui.
+
+- [x] ✅ **M6 SELESAI** Show/hide password semua form (2026-07-22).
+  Component `<x-password-input>` (Alpine show/hide, eye/eye-off SVG).
+  Diterapkan: auth/login (login+signup), ortu/password, guru/password, admin/accounts.
+
+- [x] ✅ **M7 SELESAI** Username + cek realtime di pengaturan akun ortu (2026-07-22).
+  `DashboardController::updateAccount` tambah validasi username (Rule::unique ignore self, regex, min:3).
+  View ortu/account ditulis ulang: field username + Alpine fetch check-username (debounce 500ms, endpoint existing).
+  Tombol disabled saat taken/invalid.
+
+- [x] ✅ **M8 SELESAI** Account-setup gate: akun auto-create ortu wajib isi akun sebelum profil (2026-07-22).
+  `User::needsAccountSetup()` — email null OR username===no_hp.
+  `RequireOrtuProfile` 3 langkah: (1) ForceChangePassword existing, (2) needsAccountSetup→ortu.account, (3) isComplete→ortu.profile.
+  ponytail: proxy username===no_hp; add kolom flag jika proxy miss edge case.
+
+- [x] ✅ **M9 SELESAI** Email wajib saat first login guru (2026-07-22).
+  `GuruController::updatePassword` tambah validasi+simpan email (required, unique ignore self).
+  Form tab password guru +field Email. Test diperbarui (+email).
+  140 passed (533 assertions), build ✓.
+
+## Fase N — Data Orang Tua (2026-07-22)
+
+- [x] ✅ **N1 SELESAI** L3.3 Data Orang Tua (2026-07-22).
+  `MasterDataController@parents`: list ortu (whereHas students) + 3 filter (cari ayah/ibu/anak, kelas, status) + paginate 25.
+  View `admin/data/parents.blade.php`: rowspan kolom ortu/aksi, anak per-baris. Kolom: Ayah·Ibu·Nama Anak·No.HP·Pekerjaan·Wali Kelas·Kelas·Status·Aksi.
+  Sidebar desktop+mobile: "Data Orang Tua" antara Konten Web & Pengaturan Sistem.
+  Route `admin.data.parents` reuse grup data.*. Aksi Profil → student-profile tab ortu. Edit → redirect Data Murid (search).
+  Test `test_parents_page_lists_and_filters`. 141 passed (540 assertions), build ✓.
+  ponytail: no dedicated edit-ortu page, add when diminta.
+  L3.1/L3.2 solved by user (tidak dikerjakan).

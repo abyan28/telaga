@@ -119,6 +119,7 @@ class WaliViewsTest extends TestCase
         [$u] = $this->waliWithForm();
 
         $this->actingAs($u)->post('/portal/ortu/account', [
+            'username' => 'waliupdate',
             'email' => 'baru@test.id',
             'no_hp' => '081999888777',
         ])->assertRedirect();
@@ -128,15 +129,15 @@ class WaliViewsTest extends TestCase
     }
 
     /**
-     * daftarBank() parse bank.csv: buang header, nama bank valid (T8.1).
+     * Bank::daftarNama() menghasilkan array nama bank terurut A-Z dari DB (T8.1).
      */
-    public function test_daftar_bank_parses_csv(): void
+    public function test_daftar_bank_from_database(): void
     {
-        $banks = \App\Models\PaymentTransaction::daftarBank();
+        \App\Models\Bank::insert([['nama' => 'BANK BRI'], ['nama' => 'BANK BNI'], ['nama' => 'BANK BSI'], ['nama' => 'BANK MANDIRI'], ['nama' => 'BANK BCA']]);
+        $banks = \App\Models\Bank::daftarNama();
+        $this->assertSame('BANK BCA', $banks[0]); // terurut A-Z
         $this->assertContains('BANK MANDIRI', $banks);
-        $this->assertNotContains('nama_bank', $banks); // header terbuang
     }
-
     /**
      * K10.3: halaman Data Anak render + profil anak;
      * GATE: wali lain TIDAK bisa buka anak yg bukan miliknya (404).

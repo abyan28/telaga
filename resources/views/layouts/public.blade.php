@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'RA Al Kautsar — Sistem Informasi Sekolah')</title>
+    <title>@yield('title', 'TELAGA AL KAUTSAR')</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600,700" rel="stylesheet" />
 
     <!-- Scripts & Styles -->
+    @php $__favicon = \App\Models\SiteContent::logoUrl(); @endphp
+    @if ($__favicon)
+        <link rel="icon" href="{{ $__favicon }}">
+    @endif
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="font-sans antialiased bg-slate-50 text-slate-800">
@@ -28,8 +33,8 @@
                         </div>
                     @endif
                     <div>
-                        <span class="text-lg font-bold tracking-tight text-slate-900 block leading-tight">RA AL KAUTSAR</span>
-                        <span class="text-xs text-sky-600 font-medium tracking-wider uppercase block">Islamic Kids School</span>
+                        <span class="text-lg font-bold tracking-tight text-slate-900 block leading-tight">{{ $kontak['kontak.nama_sekolah'] ?? 'RA AL KAUTSAR' }}</span>
+                        <span class="text-xs text-sky-600 font-medium tracking-wider uppercase block">{{ $kontak['kontak.sub_nama'] ?? 'Yayasan Al Kautsar Puri Kosambi' }}</span>
                     </div>
                 </div>
 
@@ -94,10 +99,10 @@
                                 AK
                             </div>
                         @endif
-                        <span class="text-lg font-bold tracking-tight text-white">RA AL KAUTSAR</span>
+                        <span class="text-lg font-bold tracking-tight text-white">{{ $kontak['kontak.nama_sekolah'] ?? 'RA AL KAUTSAR' }}</span>
                     </div>
                     <p class="text-sm text-slate-400 leading-relaxed">
-                        Pendidikan anak usia dini berbasis nilai-nilai keislaman yang membentuk akhlak mulia, kemandirian, dan kecerdasan anak sejak usia dini.
+                        {{ $kontak['kontak.deskripsi_footer'] ?? '' }}
                     </p>
                 </div>
 
@@ -120,24 +125,32 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span>Jl. Pembangunan No. 12, Kec. Sukajadi, Kota Bandung, Jawa Barat</span>
+                        <span>{{ $kontak['kontak.alamat'] ?? '' }}</span>
                     </p>
                     <p class="flex items-center space-x-2.5">
                         <svg class="w-5 h-5 text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                         </svg>
-                        <span>(022) 1234-5678</span>
+                        <span>{{ $kontak['kontak.telepon'] ?? '' }}</span>
                     </p>
                     <p class="flex items-center space-x-2.5">
                         <svg class="w-5 h-5 text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
-                        <span>info@raalkautsar.sch.id</span>
+                        <span>{{ $kontak['kontak.email'] ?? '' }}</span>
                     </p>
+                    @if (!empty($kontak['kontak.jam_operasional']))
+                    <p class="flex items-center space-x-2.5">
+                        <svg class="w-5 h-5 text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>{{ $kontak['kontak.jam_operasional'] }}</span>
+                    </p>
+                    @endif
                 </div>
             </div>
             <div class="mt-12 pt-8 border-t border-slate-800 text-center text-xs text-slate-500">
-                &copy; {{ date('Y') }} RA Al Kautsar. Hak cipta dilindungi undang-undang.
+                &copy; {{ date('Y') }} {{ $kontak['kontak.nama_sekolah'] ?? 'TELAGA AL KAUTSAR' }}. {{ $kontak['kontak.copyright'] ?? 'Hak cipta dilindungi undang-undang.' }}
             </div>
         </div>
     </footer>

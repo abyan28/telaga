@@ -58,7 +58,7 @@ class PaymentController extends Controller
             'nomor' => \App\Models\Setting::get('rekening_sekolah', ''),
             'atas_nama' => \App\Models\Setting::get('atas_nama', ''),
         ];
-        $daftarBank = PaymentTransaction::daftarBank();
+        $daftarBank = \App\Models\Bank::daftarNama();
 
         return view('ortu.payments', compact('students', 'history', 'rekening', 'daftarBank', 'ppdbDibuka'));
     }

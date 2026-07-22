@@ -54,14 +54,32 @@ class PaymentVerificationService
     }
 
     /**
-     * Menyinkronkan saldo tagihan terkait transaksi (SPP atau daftar ulang).
+     * Menyinkronkan saldo tagihan terkait transaksi (SPP atau daftar ulang),
+     * ATAU memajukan/memundurkan status formulir untuk transaksi pendaftaran.
      *
      * jumlah_terbayar = SUM transaksi 'diverifikasi' untuk tagihan tsb; status
      * dihitung ulang: lunas bila >= nominal, kurang bila 0 < terbayar < nominal,
-     * selain itu belum_lunas. Transaksi pendaftaran tidak punya tagihan cicilan.
+     * selain itu belum_lunas. Transaksi pendaftaran tak punya tagihan cicilan —
+     * verifikasinya menggerakkan status RegistrationForm (menunggu_verifikasi
+     * → pembayaran_diverifikasi bila diverifikasi; kembali ke menunggu_bukti
+     * agar wali unggah ulang bila ditolak).
      */
     private function syncBill(PaymentTransaction $trx): void
     {
+        if ($trx->jenis === 'pendaftaran') {
+            // Muat form segar (bukan relasi cached yang bisa basi bila ada >1 trx).
+            $form = $trx->registrationForm()->first();
+            // Hanya bergerak dari tahap awal alur (jangan timpa status lanjut
+            // seperti diproses_seleksi/lulus/gagal saat verifikasi ulang).
+            if ($form && in_array($form->status, ['menunggu_verifikasi', 'menunggu_bukti', 'submitted'], true)) {
+                $form->update([
+                    'status' => $trx->status === 'diverifikasi' ? 'pembayaran_diverifikasi' : 'menunggu_bukti',
+                ]);
+            }
+
+            return;
+        }
+
         if ($trx->jenis === 'spp' && $trx->referensi_id) {
             $bill = MonthlySppBill::find($trx->referensi_id);
             if ($bill) {

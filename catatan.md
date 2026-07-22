@@ -27,19 +27,18 @@
 - [done] tambah akun admin di halaman data akun
 - [done] Karena ini ubahannya banyak, bisa sekalian rename variabel guardians/guardian jadi parents/parent? Lalu juga rename label Wali dengan Orang Tua?
 - cek apakah saat ppdb ditutup dan akun ortu yg tidak punya siswa aktif sudah diblokir login atau belum. sekalian cek, harusnya jika ppdb ditutup, tidak bisa register akun wali/ortu.
-
-1. Kolom CSV siswa — mana yang mau ditampilkan? Saya usulkan: Nama, NISN, NIS, NIK, Kelas, TA, Status, Nama Ortu, No HP Ortu, Tanggal
-    Lahir. Ada yang mau ditambah/dikurangi?
-    
-    2. Kolom CSV SPP — usul: Nama Murid, NISN, Kelas, TA, Bulan, Nominal, Terbayar, Sisa, Status. Setuju?
-    
-    3. "Siswa baru" filter — apakah artinya siswa yang NIS-nya diisi diTA tertentu, atau siswa yang id_academic_year =TA tertentu?
-    (keduanya bisa, tapi beda data)
-    
-    4. Laporan SPP — filter "siswa perorangan" artinya dropdown/search nama siswa lalu lihat semua tagihan SPP-nya? Atau export semua,
-    admin filter di spreadsheet?
-    
-    5. Lokasi di sidebar — tab baru di halaman Laporan yang sudah ada, atau entry sidebar baru?
+- [done] tambah tahun angkatan otomatis by sistem berdasarkan prefix tahun pada NIS. Trigger-nya: Untuk murid baru, saat generate NIS, sistem cek prefix tahun pada NIS (misal 25), maka dia akan masuk angkatan 2025. Untuk murid lama, saat dia dimasukkan ke database pertama kali baik melalui form tambah murid maupun import csv, sistem cek prefix tahun NIS murid lama dan memasukkan data tahun ke kolom angkatan.
+- [done] konten web untuk kontak/footer masih hardcode. tolong perbaiki agar datanya diambil dari cms konten web. cek fungsi lainnya yg sudah dibuat cms konten web namun ternyata datanya masih hardcode.
+- [done] logo di halaman login dan halaman cms admin, ortu, dan guru belum ambil dari database. lalu buatkan juga cms konten untuk edit hak cipta (taruh di slidebar footer), 
+- [done] logo yg jadi footer dan header, tambahkan juga untuk menjadi favicon agar logonya terlihat di tab browser.
+- [done] buat database aja untuk list bank yg datanya diambil dari csv. Setelah semua datanya masuk, hapus file bank.csv nya. soalnya susah untuk yg aksesnya lewat hp saat pilih bank kalau datanya diambil dari csv. Tampilannya gak kayak searchable dropdown gitu. kecuali kalau tampilannya bisa dibuat searchable dropdown gitu dg data dari csv, baru deh gak usah masukin ke database.
+- [done] tambah show/hide di semua form password
+- [done] di pengaturan akun csm ortu, tambahkan ubah username dan jangan lupa validasi langsung di form apakah username tersebut tersedia atau tidak.
+- [done] apakah email bisa masuk ke dalam tabel parents? sebab saya cek kolom email hanya ada di tabel users, sedangkan nanti ini penting untuk notifikasi ke depannya. masuk dalam mode plan dulu untuk tahu apakah ini bisa diimplementasikan atau gak.
+- [done] badge pada sidebar pendaftaran murid untuk konfirmasi cukup dihitung 1 saja untuk tiap pendaftar (jika masih ada yg perlu diverifikasi). Cuma nanti untuk notif pending verifikasi pembayaran ppdb tetap terhitung 1 juga dan muncul di badge dashboard pending pembayaran berdasarkan apakah pembayaran ppdb nya sudah diverif atau belum. jika sudah, badge angka di pending pembayaran hilang. namun jika proses verifikasi berkas dan proses seleksi belum selesai, maka badge angka pada pending ppdb dan pendaftaran murid tetep 1 (berdasarkan jumlah data pendaftar).
+- lengkapi data pada halaman profil guru sesuai di database
+- tambahkan kolom angkatan pada halaman data murid
+- blokw212728
 
 DISKUSI K10.4
 - setelah membaca opsi-opsi yang kamu berikan, bagaimana kalau kita buat halaman baru untuk mengelola data orang tua? Halamannya mirip halaman data siswa, jadi berupa datatable, ada fungsi search, paginasi, filter kelas, filter status aktif. Untuk judul kolomnya kira2 begini -> Nama Orang Tua - No. HP - Pekerjaan - Nama Anak - Nama Wali Kelas - Kelas - Status - Aksi. Untuk kolom anak, nama wali kelas, dan kelas, jika anaknya lebih dari satu, tetap buat dalam satu kolom namun nama anaknya ditumpuk, begitupun juga dengan nama wali kelas dan kelasnya, tapi harus sejajar dengan nama anaknya ya. Itu dengan catatan kalau tiap anak itu wali kelas dan kelasnya beda. Kalau wali kelas dan kelasnya sama, ya isi masing2 satu data wali kelas dan kelas. Nanti di kolom aksi ada button untuk lihat profil lengkap orang tua (ada alamat juga beserta list semua anaknya), edit profil orang tua, dan tentu button untuk flag bisa cicil atau gak. 

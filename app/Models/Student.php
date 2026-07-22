@@ -19,7 +19,7 @@ class Student extends Model
 
     protected $fillable = [
         'id_parent', 'id_class', 'id_academic_year',
-        'nik', 'nisn', 'nis', 'nama_lengkap', 'nama_panggilan', 'foto_path',
+        'nik', 'nisn', 'nis', 'angkatan', 'nama_lengkap', 'nama_panggilan', 'foto_path',
         'jenis_kelamin', 'agama', 'anak_ke', 'jumlah_saudara',
         'warga_negara', 'bahasa_keseharian', 'kondisi_kesehatan',
         'sudah_mengaji', 'ngaji_dimana', 'ngaji_metode', 'ngaji_jilid',
@@ -30,7 +30,17 @@ class Student extends Model
     protected $casts = [
         'tanggal_lahir' => 'date',
         'anak_ke' => 'integer', 'jumlah_saudara' => 'integer',
+        'angkatan' => 'integer',
     ];
+
+    /**
+     * L8.3: angkatan 4-digit dari prefix tahun NIS (NSM 12 + YY 2 + urut 3).
+     * NIS "12345678901225001" → 2025. Kosong/pendek → null.
+     */
+    public static function nisToAngkatan(?string $nis): ?int
+    {
+        return $nis && strlen($nis) >= 15 ? (int) ('20'.substr($nis, 12, 2)) : null;
+    }
 
     /**
      * L1.2: aturan validasi field profil murid (DRY — dipakai 3 form).

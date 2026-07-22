@@ -131,19 +131,23 @@ class GuruController extends Controller
     {
         $request->validate([
             'username' => ['required', 'string', 'min:6', 'max:30', 'regex:/^[a-zA-Z0-9_.]+$/', Rule::unique('users', 'username')->ignore(Auth::id(), 'id_users')],
+            'email'    => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore(Auth::id(), 'id_users')],
             'current_password' => ['required', 'current_password'],
             'password' => ['required', 'confirmed', Password::min(8)],
         ], [
-            'username.regex' => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi/tanda hubung).',
-            'username.min' => 'Username minimal 6 karakter.',
+            'username.regex'  => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi/tanda hubung).',
+            'username.min'    => 'Username minimal 6 karakter.',
             'username.unique' => 'Username ini sudah digunakan.',
+            'email.required'  => 'Email wajib diisi.',
+            'email.unique'    => 'Email ini sudah digunakan.',
             'current_password.current_password' => 'Password saat ini salah.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
         Auth::user()->update([
-            'username' => $request->username,
-            'password' => Hash::make($request->password),
+            'username'             => $request->username,
+            'email'                => $request->email,
+            'password'             => Hash::make($request->password),
             'must_change_password' => false,
         ]);
 

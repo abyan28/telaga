@@ -219,12 +219,7 @@
                     </div>
                     <div class="space-y-1">
                         <label class="text-2xs font-bold uppercase tracking-wider text-slate-500">Bank Asal Transfer</label>
-                        <input list="daftar-bank" name="bank_asal" value="{{ old('bank_asal') }}" placeholder="Ketik untuk mencari bank/e-wallet…" autocomplete="off" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-sky-200 focus:border-sky-400 outline-none">
-                        <datalist id="daftar-bank">
-                            @foreach ($daftarBank as $bank)
-                                <option value="{{ $bank }}">
-                            @endforeach
-                        </datalist>
+                        <x-bank-picker :banks="$daftarBank" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-sky-200 focus:border-sky-400 outline-none" />
                     </div>
                     <div class="space-y-1">
                         <label class="text-2xs font-bold uppercase tracking-wider text-slate-500">Bukti Transfer (JPG/PDF, maks 2 MB)</label>

@@ -54,6 +54,7 @@
                         <th class="py-4">Kelas</th>
                         <th class="py-4">Orang Tua</th>
                         <th class="py-4">No. HP Ortu</th>
+                        <th class="py-4">Angkatan</th>
                         <th class="py-4">Status</th>
                         <th class="py-4 text-right">Aksi</th>
                     </tr>
@@ -70,6 +71,7 @@
                             <td class="py-4 font-semibold text-slate-700">{{ $student->schoolClass?->nama_kelas ?? 'Belum Terbagi' }}</td>
                             <td class="py-4 text-slate-500">{{ $student->ortu?->namaWali() ?? '-' }}</td>
                             <td class="py-4 font-semibold text-slate-500">{{ $student->ortu?->noHpWali() ?? '-' }}</td>
+                            <td class="py-4 text-slate-500">{{ $student->angkatan ?? '—' }}</td>
                             <td class="py-4">
                                 <span class="inline-flex items-center px-2 py-0.5 rounded text-4xs font-bold uppercase tracking-wider {{ $stClass }}">{{ $student->status ?? '-' }}</span>
                             </td>
@@ -77,7 +79,8 @@
                                 @php
                                     $row = [
                                         'id' => $student->id_students, 'nama_lengkap' => $student->nama_lengkap,
-                                        'nama_panggilan' => $student->nama_panggilan, 'nik' => $student->nik, 'nisn' => $student->nisn,
+                                        'nama_panggilan' => $student->nama_panggilan, 'nik' => $student->nik,
+                                        'nisn' => $student->nisn, 'nis' => $student->nis, 'angkatan' => $student->angkatan,
                                         'jenis_kelamin' => $student->jenis_kelamin, 'tempat_lahir' => $student->tempat_lahir,
                                         'tanggal_lahir' => optional($student->tanggal_lahir)->format('Y-m-d'),
                                         'id_class' => $student->id_class, 'status' => $student->status,
@@ -104,7 +107,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="py-6 text-center text-slate-400">Belum ada data murid.</td></tr>
+                        <tr><td colspan="9" class="py-6 text-center text-slate-400">Belum ada data murid.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -152,6 +155,10 @@
                     <div class="space-y-1">
                         <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">NIS (15-18 digit, opsional)</label>
                         <input type="text" name="nis" inputmode="numeric" pattern="[0-9]{15,18}" maxlength="18" x-model="f.nis" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Angkatan (4 digit tahun)</label>
+                        <input type="number" name="angkatan" min="2000" max="2099" x-model="f.angkatan" placeholder="Auto dari NIS bila diisi" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-indigo-500">
                     </div>
                     <div class="space-y-1">
                         <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Jenis Kelamin</label>
@@ -295,7 +302,7 @@
 <script>
     // State modal CRUD murid: satu form dipakai untuk tambah & edit (T5.2).
     function studentCrud() {
-        const blank = { nama_lengkap: '', nama_panggilan: '', nik: '', nisn: '', nis: '', jenis_kelamin: 'L', tempat_lahir: '', tanggal_lahir: '', id_class: '', status: 'aktif',
+        const blank = { nama_lengkap: '', nama_panggilan: '', nik: '', nisn: '', nis: '', angkatan: '', jenis_kelamin: 'L', tempat_lahir: '', tanggal_lahir: '', id_class: '', status: 'aktif',
             agama: 'ISLAM', anak_ke: '', jumlah_saudara: '', warga_negara: 'INDONESIA', bahasa_keseharian: '', kondisi_kesehatan: '',
             sudah_mengaji: '', ngaji_dimana: '', ngaji_metode: '', ngaji_jilid: '',
             pernah_belajar: '', belajar_keterangan: '', ukuran_baju: '', foto_path: '', no_hp_ortu: '' };

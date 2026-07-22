@@ -1,7 +1,7 @@
 @extends('layouts.dashboard')
 
 @section('title', 'Profil Orang Tua — TELAGA AL KAUTSAR')
-@section('header_title', 'Profil Orang Tua / Orang Tua')
+@section('header_title', 'Profil Orang Tua')
 
 @section('content')
 @php
