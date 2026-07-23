@@ -53,7 +53,7 @@ class MasterDataController extends Controller
         if ($kelas = $request->query('id_class')) {
             $kelas === 'none' ? $q->whereNull('id_class') : $q->where('id_class', $kelas);
         }
-        // Filter status (default 'aktif'; 'semua' = tanpa filter; lulus/nonaktif = arsip)
+        // Filter status (default 'aktif'; 'semua' = tanpa filter; alumni/nonaktif = arsip)
         $status = $request->query('status', 'aktif');
         if ($status !== 'semua') {
             $q->where('status', $status);
@@ -408,9 +408,7 @@ class MasterDataController extends Controller
             }
 
             // Penugasan ke kelas yang diampu (multi-kelas)
-            if (! empty($data['class_ids'])) {
-                $teacher->classes()->sync($data['class_ids']);
-            }
+            $teacher->classes()->sync($data['class_ids'] ?? []);
 
             // K8.1: set kelas yang diwalikelaskan guru ini (bila dipilih).
             $this->setTeacherHomeroom($teacher->id_teachers, $data['homeroom_class_id'] ?? null);
@@ -568,6 +566,8 @@ class MasterDataController extends Controller
                 ->where('id_classes', '!=', $class->id_classes)
                 ->update(['id_homeroom_teacher' => null]);
             Teacher::where('id_teachers', $teacherId)->update(['jabatan' => 'WALI KELAS']);
+            // Otomatis ampu: guru wali kelas otomatis mengampu kelas tsb.
+            Teacher::find($teacherId)?->classes()->syncWithoutDetaching([$class->id_classes]);
         }
         $class->update(['id_homeroom_teacher' => $teacherId]);
     }
@@ -588,6 +588,8 @@ class MasterDataController extends Controller
             }
             SchoolClass::where('id_classes', $classId)->update(['id_homeroom_teacher' => $teacherId]);
             Teacher::where('id_teachers', $teacherId)->update(['jabatan' => 'WALI KELAS']);
+            // Otomatis ampu: guru wali kelas otomatis mengampu kelas tsb.
+            Teacher::find($teacherId)?->classes()->syncWithoutDetaching([$classId]);
         } else {
             $this->clearWaliKelasJabatan($teacherId);
         }

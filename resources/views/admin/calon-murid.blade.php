@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $dendaPct = $persen; // langsung persen denda (settings key persen_refund = denda, perbaiki L2.1)
+    $dendaPct = $persen;
     $stColor  = ['lunas' => 'bg-emerald-100 text-emerald-700', 'kurang' => 'bg-amber-100 text-amber-700', 'belum_lunas' => 'bg-rose-100 text-rose-700'];
 @endphp
 <div class="space-y-6">
@@ -17,43 +17,66 @@
         <div class="bg-rose-50 border border-rose-100 text-rose-700 rounded-2xl px-5 py-3 text-xs font-semibold">{{ $errors->first() }}</div>
     @endif
 
-    {{-- Header + tombol Generate NIS --}}
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-            <h3 class="text-base font-bold text-slate-950">Calon Murid Baru</h3>
-            <p class="text-xs text-slate-400 mt-0.5">Murid yang sudah lulus seleksi &amp; membayar sebagian/lunas daftar ulang, belum mendapat NIS.</p>
-        </div>
-        <div class="flex items-center gap-3">
-            @if (! $ppdbTutup)
-                <span class="text-xs text-amber-600 font-semibold bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-                    PPDB masih buka — tutup PPDB dulu untuk generate NIS
-                </span>
-            @elseif (strlen($nsmSekolah) !== 12)
-                <span class="text-xs text-rose-600 font-semibold bg-rose-50 border border-rose-100 rounded-xl px-3 py-2">
-                    NSM belum diisi — isi di Pengaturan Sistem → NSM
-                </span>
-            @endif
-            <form action="{{ route('admin.calon-murid.generate-nis') }}" method="POST"
-                  onsubmit="return confirm('Generate NIS untuk {{ $calons->count() }} calon murid? Urutan berdasarkan abjad nama. Tindakan ini tidak dapat dibatalkan.')">
-                @csrf
-                <button type="submit"
-                        @if (! $ppdbTutup || strlen($nsmSekolah) !== 12 || $calons->isEmpty()) disabled @endif
-                        class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs shadow-md transition-colors">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
-                    Generate NIS ({{ $calons->count() }})
-                </button>
-            </form>
-        </div>
-    </div>
+    {{-- Tabel calon murid + filter (satu card, seperti daftar-ulang) --}}
+    <div class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-6">
+        <div class="flex flex-col gap-4">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-950">Calon Murid Baru</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Murid yang sudah lulus seleksi &amp; membayar sebagian/lunas daftar ulang.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    @if (! $ppdbTutup)
+                        <span class="text-xs text-amber-600 font-semibold bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                            PPDB masih buka — tutup PPDB dulu untuk generate NIS
+                        </span>
+                    @elseif (strlen($nsmSekolah) !== 12)
+                        <span class="text-xs text-rose-600 font-semibold bg-rose-50 border border-rose-100 rounded-xl px-3 py-2">
+                            NSM belum diisi — isi di Pengaturan Sistem → NSM
+                        </span>
+                    @elseif ($hasPendingDiverifikasi)
+                        <span class="text-xs text-rose-600 font-semibold bg-rose-50 border border-rose-100 rounded-xl px-3 py-2">
+                            Verifikasi pembayaran daftar ulang calon murid yang masih menunggu terlebih dahulu
+                        </span>
+                    @endif
+                    <form action="{{ route('admin.calon-murid.generate-nis') }}" method="POST"
+                          onsubmit="return confirm('Generate NIS untuk {{ $jumlahBelumNis }} calon murid? Urutan berdasarkan abjad nama. Tindakan ini tidak dapat dibatalkan.')">
+                        @csrf
+                        <button type="submit"
+                                @if (! $ppdbTutup || strlen($nsmSekolah) !== 12 || $jumlahBelumNis === 0 || $hasPendingDiverifikasi) disabled @endif
+                                class="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs shadow-md transition-colors">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"/></svg>
+                            Generate NIS ({{ $jumlahBelumNis }})
+                        </button>
+                    </form>
+                </div>
+            </div>
 
-    {{-- Info denda --}}
-    <div class="bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 text-xs text-slate-500">
-        Aturan pembatalan: denda <span class="font-bold text-slate-700">{{ $dendaPct }}%</span> dari total biaya DU.
-        Refund = terbayar &minus; {{ $dendaPct }}% total. Bila terbayar &lt; {{ $dendaPct }}% → belum bisa dibatalkan penuh (wajib lunasi sisa denda).
-    </div>
-
-    {{-- Tabel calon murid --}}
-    <div class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-4">
+            <div class="flex justify-end">
+                <form method="GET" action="{{ route('admin.calon-murid') }}" class="flex flex-wrap items-center gap-2">
+                    <input type="text" name="cari" value="{{ $cari }}" placeholder="Cari nama / NIK / NIS / No. HP…"
+                           class="border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600 w-48">
+                    <select name="status" onchange="this.form.submit()"
+                            class="border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600">
+                        <option value="">Semua Status</option>
+                        <option value="lunas" @selected($status === 'lunas')>Lunas</option>
+                        <option value="kurang" @selected($status === 'kurang')>Kurang</option>
+                        <option value="belum_lunas" @selected($status === 'belum_lunas')>Belum Bayar</option>
+                    </select>
+                    <select name="tahun" onchange="this.form.submit()"
+                            class="border border-slate-200 rounded-lg px-3 py-2 text-xs font-semibold text-slate-600">
+                        <option value="">Semua Tahun Ajaran</option>
+                        @foreach ($tahunOpsi as $ta)
+                            <option value="{{ $ta->id_academic_years }}" @selected((string) $tahun === (string) $ta->id_academic_years)>{{ $ta->tahun }}</option>
+                        @endforeach
+                    </select>
+                    <button type="submit" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg">Cari</button>
+                    @if ($tahun || $status || $cari)
+                        <a href="{{ route('admin.calon-murid') }}" class="text-4xs font-bold text-slate-400 hover:text-rose-500 px-2">Reset</a>
+                    @endif
+                </form>
+            </div>
+        </div>
         <div class="overflow-x-auto">
             <table class="w-full text-left text-xs border-collapse">
                 <thead>
@@ -76,26 +99,38 @@
                             $bill     = $s->reRegistrationPayments->first();
                             $total    = (float) ($bill?->total_biaya ?? 0);
                             $bayar    = (float) ($bill?->jumlah_terbayar ?? 0);
+                            $pending  = $bill && $bill->transactions->contains(fn ($t) => $t->status === 'pending');
                             $denda    = round($total * $dendaPct / 100, 0);
                             $refund   = max(0, $bayar - $denda);
-                            $kurang   = max(0, $denda - $bayar); // sisa wajib lunasi
+                            $kurang   = max(0, $denda - $bayar);
                             $stClass  = $stColor[$bill?->status ?? ''] ?? 'bg-slate-100 text-slate-600';
                         @endphp
                         <tr class="text-slate-600 hover:bg-slate-50 transition-colors">
-                            <td class="py-3 text-slate-400">{{ $i + 1 }}</td>
+                            <td class="py-3 text-slate-400">{{ $calons->firstItem() + $i }}</td>
                             <td class="py-3 font-bold text-slate-900">{{ $s->nama_lengkap }}</td>
                             <td class="py-3 text-slate-500">{{ $s->ortu?->namaWali() ?? '-' }}</td>
-                            <td class="py-3 text-slate-300 italic">— belum —</td>
+                            <td class="py-3 {{ $s->nis ? 'font-semibold text-slate-700' : 'text-slate-300 italic' }}">{{ $s->nis ?? '— belum —' }}</td>
                             <td class="py-3 text-slate-400">{{ $s->tanggal_lahir?->translatedFormat('d M Y') ?? '-' }}</td>
                             <td class="py-3 text-right font-semibold">Rp {{ number_format((int) $total, 0, ',', '.') }}</td>
-                            <td class="py-3 text-right text-emerald-700 font-bold">Rp {{ number_format((int) $bayar, 0, ',', '.') }}</td>
+                            <td class="py-3 text-right {{ $bayar > 0 ? 'text-emerald-700 font-bold' : ($pending ? 'text-amber-600' : 'text-slate-400') }}">
+                                @if ($bayar > 0)
+                                    Rp {{ number_format((int) $bayar, 0, ',', '.') }}
+                                @elseif ($pending)
+                                    <span class="italic">Menunggu</span>
+                                @else
+                                    Rp 0
+                                @endif
+                            </td>
                             <td class="py-3 text-right font-bold text-slate-900">Rp {{ number_format((int) ($bill?->sisa() ?? 0), 0, ',', '.') }}</td>
                             <td class="py-3 text-right">
-                                <span class="inline-flex px-2 py-0.5 rounded text-4xs font-bold uppercase {{ $stClass }}">{{ str_replace('_', ' ', $bill?->status ?? '-') }}</span>
+                                @if ($bayar == 0 && $pending)
+                                    <span class="inline-flex px-2 py-0.5 rounded text-4xs font-bold uppercase bg-amber-100 text-amber-700">Menunggu Verifikasi</span>
+                                @else
+                                    <span class="inline-flex px-2 py-0.5 rounded text-4xs font-bold uppercase {{ $stClass }}">{{ str_replace('_', ' ', $bill?->status ?? '-') }}</span>
+                                @endif
                             </td>
                             <td class="py-3 text-right">
                                 @if ($kurang > 0)
-                                    {{-- Terbayar < denda: tampilkan keterangan, bukan tombol batal aktif --}}
                                     <span class="text-4xs text-amber-600 font-semibold">
                                         Lunasi Rp {{ number_format((int) $kurang, 0, ',', '.') }} dulu
                                     </span>
@@ -113,17 +148,14 @@
                     @empty
                         <tr>
                             <td colspan="10" class="py-8 text-center text-slate-400">
-                                @if ($ppdbTutup)
-                                    Semua calon murid sudah mendapat NIS atau belum ada yang membayar daftar ulang.
-                                @else
-                                    Belum ada calon murid yang membayar daftar ulang.
-                                @endif
+                                Belum ada data calon murid.
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
+        <x-paginate :paginator="$calons" />
     </div>
 
 </div>

@@ -35,7 +35,7 @@ class StatusController extends Controller
             ->each->cancelLulusIfPpdbClosedAndUnpaid();
 
         // Ambil SEMUA formulir pendaftaran milik wali beserta relasinya (terbaru dulu)
-        $forms = RegistrationForm::with(['student', 'documents'])
+        $forms = RegistrationForm::with(['student.reRegistrationPayments', 'documents'])
             ->where('id_user', Auth::id())
             ->latest('id_registration_forms')
             ->get();

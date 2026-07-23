@@ -565,9 +565,9 @@ class AdminGuruViewsTest extends TestCase
         $this->assertSame('101234567890' . '26' . '001', $b->fresh()->nis);
         $this->assertSame('aktif', $b->fresh()->status);
 
-        // B kini resmi di Data Murid; halaman calon murid kosong dari B.
+        // B kini resmi di Data Murid; halaman calon murid tetap tampil sbg record.
         $this->actingAs($admin)->get('/portal/admin/data/students')->assertSee('BBB CALON');
-        $this->actingAs($admin)->get('/portal/admin/calon-murid')->assertDontSee('BBB CALON');
+        $this->actingAs($admin)->get('/portal/admin/calon-murid')->assertSee('BBB CALON');
     }
 
     /**
@@ -584,15 +584,15 @@ class AdminGuruViewsTest extends TestCase
             'tempat_lahir' => 'BDG', 'tanggal_lahir' => '2020-01-01', 'status' => 'aktif']);
         Student::create(['id_parent' => $ortu->id_parents, 'id_academic_year' => $this->ta->id_academic_years,
             'nik' => '3400000000001002', 'nama_lengkap' => 'ANAK LULUS', 'jenis_kelamin' => 'P',
-            'tempat_lahir' => 'BDG', 'tanggal_lahir' => '2020-01-01', 'status' => 'lulus']);
+            'tempat_lahir' => 'BDG', 'tanggal_lahir' => '2020-01-01', 'status' => 'alumni']);
 
         // Tanpa filter: kedua anak + data ortu tampil.
         $this->actingAs($admin)->get('/portal/admin/data/parents')
             ->assertOk()->assertSee('PAK BUDI')->assertSee('BU ANI')
             ->assertSee('ANAK AKTIF')->assertSee('ANAK LULUS');
 
-        // Filter status=lulus: ortu tetap muncul (punya anak lulus).
-        $this->actingAs($admin)->get('/portal/admin/data/parents?status=lulus')
+        // Filter status=alumni: ortu tetap muncul (punya anak alumni).
+        $this->actingAs($admin)->get('/portal/admin/data/parents?status=alumni')
             ->assertOk()->assertSee('PAK BUDI');
     }
 }

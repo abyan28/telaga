@@ -92,17 +92,15 @@ class RegistrationForm extends Model
             ['status' => 'gagal'],
         );
 
-        // Notifikasi email ke wali (PRD §7.13). MAIL_MAILER=log saat dev → terkirim
-        // otomatis begitu SMTP asli di-set (deploy 3.C).
+        // Notifikasi email ke wali (PRD §7.13) — dikirim via queue agar tidak blokir.
         $this->loadMissing('user');
         if ($this->user?->email) {
-            \Illuminate\Support\Facades\Mail::to($this->user->email)->send(
-                new \App\Mail\RegistrationNotification(
-                    'Status Kelulusan Dibatalkan',
-                    'Mohon maaf, status kelulusan calon murid dibatalkan karena masa pendaftaran (PPDB) telah ditutup '
-                    .'dan pembayaran daftar ulang belum dilakukan sama sekali. Silakan hubungi pihak sekolah untuk informasi lebih lanjut.',
-                )
-            );
+            $mailable = (new \App\Mail\RegistrationNotification(
+                'Status Kelulusan Dibatalkan',
+                'Mohon maaf, status kelulusan calon murid dibatalkan karena masa pendaftaran (PPDB) telah ditutup '
+                .'dan pembayaran daftar ulang belum dilakukan sama sekali. Silakan hubungi pihak sekolah untuk informasi lebih lanjut.',
+            ))->onQueue('spp-notifications');
+            \Illuminate\Support\Facades\Mail::to($this->user->email)->queue($mailable);
         }
 
         return true;

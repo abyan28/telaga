@@ -57,7 +57,7 @@ class CrossFeatureTest extends TestCase
         $this->actingAs($admin)
             ->post("/portal/admin/registrations/{$form->slug}/decide", ['keputusan' => 'lulus']);
 
-        Mail::assertSent(RegistrationNotification::class);
+        Mail::assertQueued(RegistrationNotification::class);
     }
 
     /**
@@ -89,7 +89,7 @@ class CrossFeatureTest extends TestCase
             ->post("/portal/admin/payments/{$trx->id_payment_transactions}/verify", ['status' => 'diverifikasi']);
 
         // Email terkirim dengan tabel detail terisi (nama siswa, bulan, jumlah).
-        Mail::assertSent(RegistrationNotification::class, function ($mail) {
+        Mail::assertQueued(RegistrationNotification::class, function ($mail) {
             return $mail->detail['Nama Siswa'] === 'Budi'
                 && ($mail->detail['Bulan'] ?? '') === 'Agustus 2026'
                 && ! empty($mail->detail['Jumlah Dibayar']);

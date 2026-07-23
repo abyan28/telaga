@@ -45,48 +45,57 @@ class GenerateSppBills extends Command
         // Nominal SPP dinamis (diatur Admin)
         $nominal = (int) Setting::get('nominal_spp', 0);
 
-        // Buat tagihan hanya untuk siswa berstatus aktif
+        // Data rekening sekolah — ambil sekali di luar loop (N+1 fix).
+        $bankSekolah     = Setting::get('bank_sekolah', '');
+        $rekeningSekolah = Setting::get('rekening_sekolah', '');
+        $atasNama        = Setting::get('atas_nama', '');
+
+        // Buat tagihan hanya untuk siswa berstatus aktif.
+        // chunkById dipilih karena kokoh di segala skala & eager loading berfungsi penuh.
         $count = 0;
-        foreach (Student::with('ortu.user')->where('status', 'aktif')->cursor() as $student) {
-            $bill = MonthlySppBill::firstOrCreate(
-                [
-                    'id_student' => $student->id_students,
-                    'bulan' => $bulan,
-                ],
-                [
-                    'id_academic_year' => $tahunAjaran->id_academic_years,
-                    'nominal' => $nominal,
-                    'jumlah_terbayar' => 0,
-                    'status' => 'belum_lunas',
-                ],
-            );
+        Student::with('ortu.user')
+            ->where('status', 'aktif')
+            ->chunkById(500, function ($students) use ($bulan, $tahunAjaran, $nominal, $bankSekolah, $rekeningSekolah, $atasNama, &$count) {
+                foreach ($students as $student) {
+                    $bill = MonthlySppBill::firstOrCreate(
+                        [
+                            'id_student' => $student->id_students,
+                            'bulan' => $bulan,
+                        ],
+                        [
+                            'id_academic_year' => $tahunAjaran->id_academic_years,
+                            'nominal' => $nominal,
+                            'jumlah_terbayar' => 0,
+                            'status' => 'belum_lunas',
+                        ],
+                    );
 
-            // Hitung hanya tagihan yang benar-benar baru dibuat
-            if ($bill->wasRecentlyCreated) {
-                $count++;
+                    // Kirim email hanya untuk tagihan yg benar-benar baru (PRD §7.13).
+                    if ($bill->wasRecentlyCreated) {
+                        $count++;
 
-                // Kirim email notifikasi tagihan baru ke wali (PRD §7.13).
-                $email = $student->ortu?->user?->email;
-                if ($email) {
-                    $rp = fn ($n) => 'Rp '.number_format((float) $n, 0, ',', '.');
-                    $detail = [
-                        'Nama Siswa' => $student->nama_lengkap,
-                        'Bulan' => \Carbon\Carbon::parse($bulan.'-01')->translatedFormat('F Y'),
-                        'Nominal SPP' => $rp($nominal),
-                    ];
-                    $rekening = trim(Setting::get('bank_sekolah', '').' '.Setting::get('rekening_sekolah', ''));
-                    if ($rekening !== '') {
-                        $atasNama = Setting::get('atas_nama', '');
-                        $detail['Rekening Sekolah'] = $rekening.($atasNama ? ' a.n. '.$atasNama : '');
+                        $email = $student->ortu?->user?->email;
+                        if ($email) {
+                            $rp = fn ($n) => 'Rp '.number_format((float) $n, 0, ',', '.');
+                            $detail = [
+                                'Nama Siswa' => $student->nama_lengkap,
+                                'Bulan' => \Carbon\Carbon::parse($bulan.'-01')->translatedFormat('F Y'),
+                                'Nominal SPP' => $rp($nominal),
+                            ];
+                            $rekening = trim($bankSekolah.' '.$rekeningSekolah);
+                            if ($rekening !== '') {
+                                $detail['Rekening Sekolah'] = $rekening.($atasNama ? ' a.n. '.$atasNama : '');
+                            }
+                            $mailable = (new RegistrationNotification(
+                                'Tagihan SPP Baru — '.$student->nama_lengkap,
+                                'Tagihan SPP bulanan untuk '.$student->nama_lengkap.' telah diterbitkan. Silakan lakukan pembayaran sebelum batas waktu yang ditentukan.',
+                                $detail,
+                            ))->onQueue('spp-notifications');
+                            Mail::to($email)->queue($mailable);
+                        }
                     }
-                    Mail::to($email)->send(new RegistrationNotification(
-                        'Tagihan SPP Baru — '.$student->nama_lengkap,
-                        'Tagihan SPP bulanan untuk '.$student->nama_lengkap.' telah diterbitkan. Silakan lakukan pembayaran sebelum batas waktu yang ditentukan.',
-                        $detail,
-                    ));
                 }
-            }
-        }
+            });
 
         $this->info("Generate SPP {$bulan}: {$count} tagihan baru dibuat.");
 

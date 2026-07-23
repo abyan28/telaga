@@ -98,9 +98,16 @@ class RegistrationController extends Controller
         });
 
         // Notifikasi email: pendaftaran berhasil dikirim (PRD §7.13)
+        $biayaPpdb = (int) Setting::get('nominal_pendaftaran', 0);
+        $biayaFormatted = 'Rp '.number_format($biayaPpdb, 0, ',', '.');
+
         Mail::to($user->email)->send(new RegistrationNotification(
             'Pendaftaran Berhasil Dikirim',
-            'Pendaftaran murid baru atas nama '.$data['nama_anak'].' telah kami terima. Silakan lanjutkan pembayaran biaya pendaftaran.',
+            'Pendaftaran murid baru atas nama '.$data['nama_anak'].' telah kami terima. Silakan segera lakukan pembayaran PPDB sebesar '.$biayaFormatted.' ke rekening sekolah.',
+            [
+                'Nama Murid' => $data['nama_anak'],
+                'Biaya Pendaftaran (PPDB)' => $biayaFormatted,
+            ],
         ));
 
         return redirect()->route('ortu.status')

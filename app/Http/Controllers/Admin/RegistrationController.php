@@ -34,8 +34,8 @@ class RegistrationController extends Controller
     public function index(Request $request): View
     {
         $tahunOpsi = AcademicYear::orderByDesc('tahun')->get(['id_academic_years', 'tahun']);
-        // Default filter TA = tahun aktif (ikut ter-update saat admin generate TA baru).
-        $tahun = $request->query('tahun', AcademicYear::where('is_aktif', true)->value('id_academic_years'));
+        // Default filter TA = TA PPDB terbaru (setting ta_ppdb, fallback ke is_aktif).
+        $tahun = $request->query('tahun') ?? AcademicYear::taPpdb()->id_academic_years;
 
         $status = $request->query('status');
 
@@ -118,7 +118,7 @@ class RegistrationController extends Controller
     public function daftarUlang(Request $request): View
     {
         $tahunOpsi = AcademicYear::orderByDesc('tahun')->get(['id_academic_years', 'tahun']);
-        $tahun = $request->query('tahun');
+        $tahun = $request->query('tahun') ?? AcademicYear::taPpdb()->id_academic_years;
         $status = $request->query('status');
         $cari = $request->query('cari');
 
@@ -284,7 +284,7 @@ class RegistrationController extends Controller
         $lulus = $data['keputusan'] === 'lulus';
         $sebelum = ['status' => $form->status];
         $form->update(['status' => $lulus ? 'lulus' : 'gagal']);
-        $form->student?->update(['status' => $lulus ? 'aktif' : 'nonaktif']);
+        $form->student?->update(['status' => $lulus ? 'calon' : 'nonaktif']);
 
         // Lulus: buka tagihan daftar ulang (idempoten) bila belum ada.
         if ($lulus) {
@@ -311,10 +311,14 @@ class RegistrationController extends Controller
             $namaAnak = $form->student?->nama_lengkap ?? '-';
             $tahunAjaran = $form->academicYear?->tahun ?? '-';
 
+            // Data rekening sekolah & nominal DU — ambil sekali di luar percabangan.
+            $nominalDu     = (int) Setting::get('nominal_daftar_ulang', 0);
+            $bankSekolah   = Setting::get('bank_sekolah', '');
+            $rekeningSekolah = Setting::get('rekening_sekolah', '');
+            $atasNama      = Setting::get('atas_nama', '');
+
             if ($lulus) {
-                $nominalDu = (int) Setting::get('nominal_daftar_ulang', 0);
-                $rekening  = trim(Setting::get('bank_sekolah', '').' '.Setting::get('rekening_sekolah', ''));
-                $atasNama  = Setting::get('atas_nama', '');
+                $rekening = trim($bankSekolah.' '.$rekeningSekolah);
                 $detail = [
                     'Nama Siswa'      => $namaAnak,
                     'Tahun Ajaran'    => $tahunAjaran,
@@ -324,17 +328,19 @@ class RegistrationController extends Controller
                 if ($rekening !== '') {
                     $detail['Rekening Sekolah'] = $rekening.($atasNama ? ' a.n. '.$atasNama : '');
                 }
-                Mail::to($form->user->email)->send(new \App\Mail\RegistrationNotification(
+                $mailable = (new \App\Mail\RegistrationNotification(
                     'Selamat, '.$namaAnak.' Dinyatakan Lulus Seleksi',
                     'Selamat! Calon murid atas nama '.$namaAnak.' dinyatakan LULUS seleksi PPDB Tahun Ajaran '.$tahunAjaran.'. Silakan segera lakukan pembayaran Daftar Ulang sesuai nominal di bawah ini.',
                     $detail,
-                ));
+                ))->onQueue('spp-notifications');
+                Mail::to($form->user->email)->queue($mailable);
             } else {
-                Mail::to($form->user->email)->send(new \App\Mail\RegistrationNotification(
+                $mailable = (new \App\Mail\RegistrationNotification(
                     'Pemberitahuan Status Seleksi '.$namaAnak,
                     'Mohon maaf, calon murid atas nama '.$namaAnak.' dinyatakan TIDAK LULUS seleksi PPDB Tahun Ajaran '.$tahunAjaran.'. Terima kasih atas kepercayaan Anda mendaftarkan putra-putri di RA Al Kautsar.',
                     ['Nama Siswa' => $namaAnak, 'Tahun Ajaran' => $tahunAjaran, 'Status Seleksi' => 'Tidak Lulus'],
-                ));
+                ))->onQueue('spp-notifications');
+                Mail::to($form->user->email)->queue($mailable);
             }
         }
 
@@ -348,7 +354,7 @@ class RegistrationController extends Controller
     {
         $sebelum = ['status' => $form->status];
         $form->update(['status' => 'diproses_seleksi']);
-        $form->student?->update(['status' => 'aktif']);
+        $form->student?->update(['status' => 'calon']);
 
         AuditLogService::record('buka_keputusan', 'RegistrationForm#'.$form->id_registration_forms,
             $sebelum, ['status' => 'diproses_seleksi']);
@@ -367,24 +373,61 @@ class RegistrationController extends Controller
     }
 
     /**
-     * L2.1: daftar calon murid (lulus, sudah bayar DU sebagian/lunas, belum dapat NIS).
-     * Tab "Calon Murid" di halaman Daftar Ulang.
+     * L2.1: daftar calon murid (lulus, sudah bayar DU sebagian/lunas).
+     * Tab "Calon Murid" di halaman Daftar Ulang. Data tetap tampil setelah
+     * generate NIS sebagai record (tanpa filter whereNull nis).
      */
-    public function calonMurid(): View
+    public function calonMurid(Request $request): View
     {
-        // Calon = siswa dari PPDB (punya form lulus) + DU terbayar > 0 + nis null.
-        $calons = \App\Models\Student::with(['ortu', 'reRegistrationPayments' => fn ($q) => $q->latest()])
+        $tahunOpsi = AcademicYear::orderByDesc('tahun')->get(['id_academic_years', 'tahun']);
+        $tahun = $request->query('tahun') ?? AcademicYear::taPpdb()->id_academic_years;
+        $status = $request->query('status');
+        $cari = $request->query('cari');
+
+        $calons = \App\Models\Student::with(['ortu', 'reRegistrationPayments' => fn ($q) => $q->latest(), 'reRegistrationPayments.transactions'])
             ->whereHas('registrationForms', fn ($q) => $q->where('status', 'lulus'))
-            ->whereHas('reRegistrationPayments', fn ($q) => $q->where('jumlah_terbayar', '>', 0))
-            ->whereNull('nis')
+            ->where(function ($q) {
+                $q->whereHas('reRegistrationPayments', fn ($q) => $q->where('jumlah_terbayar', '>', 0))
+                  ->orWhereHas('reRegistrationPayments.transactions', fn ($q) => $q->where('status', 'pending'));
+            })
+            ->when($tahun, fn ($q) => $q->whereHas('registrationForms', fn ($f) => $f->where('id_academic_year', $tahun)))
+            ->when($status, fn ($q) => $q->whereHas('reRegistrationPayments', fn ($r) => $r->where('status', $status)))
+            ->when($cari, function ($q) use ($cari) {
+                $q->where(function ($q) use ($cari) {
+                    $q->where('nama_lengkap', 'like', "%$cari%")
+                      ->orWhere('nik', 'like', "%$cari%")
+                      ->orWhere('nis', 'like', "%$cari%")
+                      ->orWhereHas('ortu', fn ($g) => $g->where('ayah_nama', 'like', "%$cari%")
+                          ->orWhere('ibu_nama', 'like', "%$cari%")
+                          ->orWhere('ayah_no_hp', 'like', "%$cari%")
+                          ->orWhere('ibu_no_hp', 'like', "%$cari%"));
+                });
+            })
             ->orderBy('nama_lengkap')
-            ->get();
+            ->paginate(25)
+            ->withQueryString();
+
+        // Jumlah calon siap NIS (sudah diverifikasi).
+        $jumlahBelumNis = \App\Models\Student::whereHas('registrationForms', fn ($q) => $q->where('status', 'lulus'))
+            ->whereNull('nis')
+            ->whereHas('reRegistrationPayments', fn ($q) => $q->where('jumlah_terbayar', '>', 0))
+            ->count();
+
+        // Cek apakah ada calon yang sudah upload bukti DU tapi belum diverifikasi.
+        $hasPendingDiverifikasi = \App\Models\Student::whereHas('registrationForms', fn ($q) => $q->where('status', 'lulus'))
+            ->whereNull('nis')
+            ->whereHas('reRegistrationPayments', fn ($q) => $q->where('jumlah_terbayar', '=', 0))
+            ->whereHas('reRegistrationPayments.transactions', fn ($q) => $q->where('status', 'pending'))
+            ->exists();
 
         $ppdbTutup  = \App\Models\Setting::get('pendaftaran_dibuka', '1') === '0';
         $nsmSekolah = \App\Models\Setting::get('nsm_sekolah', '');
         $persen     = (int) \App\Models\Setting::get('persen_refund', 70);
 
-        return view('admin.calon-murid', compact('calons', 'ppdbTutup', 'nsmSekolah', 'persen'));
+        return view('admin.calon-murid', compact(
+            'calons', 'ppdbTutup', 'nsmSekolah', 'persen',
+            'tahunOpsi', 'cari', 'status', 'tahun', 'jumlahBelumNis', 'hasPendingDiverifikasi',
+        ));
     }
 
     /**
@@ -463,10 +506,21 @@ class RegistrationController extends Controller
         $taPpdb = \App\Models\AcademicYear::taPpdb();
         $yy = $taPpdb->tahun ? substr(explode('/', $taPpdb->tahun)[0], -2) : now()->format('y');
 
-        // Ambil semua calon (nis null, lulus, sudah bayar DU), sort abjad.
-        $calons = \App\Models\Student::whereHas('registrationForms', fn ($q) => $q->where('status', 'lulus'))
-            ->whereHas('reRegistrationPayments', fn ($q) => $q->where('jumlah_terbayar', '>', 0))
+        // Gate: ada calon yang upload bukti DU tapi belum diverifikasi.
+        $hasPendingDiverifikasi = \App\Models\Student::whereHas('registrationForms', fn ($q) => $q->where('status', 'lulus'))
             ->whereNull('nis')
+            ->whereHas('reRegistrationPayments', fn ($q) => $q->where('jumlah_terbayar', '=', 0))
+            ->whereHas('reRegistrationPayments.transactions', fn ($q) => $q->where('status', 'pending'))
+            ->exists();
+
+        if ($hasPendingDiverifikasi) {
+            return back()->withErrors(['nis' => 'Verifikasi pembayaran daftar ulang calon murid yang masih menunggu terlebih dahulu.']);
+        }
+
+        // Ambil semua calon siap NIS (nis null, form lulus, sudah ada pembayaran diverifikasi).
+        $calons = \App\Models\Student::whereHas('registrationForms', fn ($q) => $q->where('status', 'lulus'))
+            ->whereNull('nis')
+            ->whereHas('reRegistrationPayments', fn ($q) => $q->where('jumlah_terbayar', '>', 0))
             ->orderBy('nama_lengkap')
             ->get(['id_students', 'nama_lengkap']);
 

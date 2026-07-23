@@ -28,7 +28,7 @@
                 <option value="">Semua Status</option>
                 <option value="aktif" @selected($status === 'aktif')>Aktif</option>
                 <option value="nonaktif" @selected($status === 'nonaktif')>Nonaktif</option>
-                <option value="lulus" @selected($status === 'lulus')>Lulus</option>
+                <option value="alumni" @selected($status === 'alumni')>Alumni</option>
                 <option value="dropout" @selected($status === 'dropout')>Drop Out</option>
             </select>
             <button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl text-xs">Cari</button>
@@ -57,13 +57,14 @@
                             @php
                                 $wk = $student->schoolClass?->homeroomTeacher?->nama ?? '-';
                                 $kelasNama = $student->schoolClass?->nama_kelas ?? '-';
-                                $statusClass = match ($student->status) {
-                                    'aktif' => 'text-emerald-700 bg-emerald-100',
-                                    'nonaktif' => 'text-slate-500 bg-slate-100',
-                                    'lulus' => 'text-indigo-700 bg-indigo-100',
-                                    'dropout' => 'text-rose-700 bg-rose-100',
-                                    default => 'text-slate-500 bg-slate-100',
-                                };
+                            $stLabel = ['calon' => 'Calon', 'aktif' => 'Aktif', 'alumni' => 'Alumni', 'nonaktif' => 'Nonaktif'];
+                            $statusClass = match ($student->status) {
+                                'aktif' => 'text-emerald-700 bg-emerald-100',
+                                'nonaktif' => 'text-slate-500 bg-slate-100',
+                                'alumni' => 'text-indigo-700 bg-indigo-100',
+                                'calon' => 'text-amber-700 bg-amber-100',
+                                default => 'text-slate-500 bg-slate-100',
+                            };
                             @endphp
                             <tr class="text-slate-600 hover:bg-slate-50 transition-colors {{ $idx > 0 ? 'border-t-0' : '' }}">
                                 @if ($idx === 0)
@@ -77,7 +78,7 @@
                                 @endif
                                 <td class="py-4 px-3">{{ $wk }}</td>
                                 <td class="py-4 px-3">{{ $kelasNama }}</td>
-                                <td class="py-4 px-3"><span class="inline-block px-2 py-0.5 rounded text-4xs font-bold uppercase {{ $statusClass }}">{{ $student->status }}</span></td>
+                                <td class="py-4 px-3"><span class="inline-block px-2 py-0.5 rounded text-4xs font-bold uppercase {{ $statusClass }}">{{ $stLabel[$student->status] ?? $student->status }}</span></td>
                                 @if ($idx === 0)
                                     <td rowspan="{{ $n }}" class="py-4 pl-3 text-right align-top whitespace-nowrap">
                                         <div class="flex gap-1 justify-end">

@@ -46,19 +46,17 @@ class GuruController extends Controller
     }
 
     /**
-     * Profil siswa (read-only) untuk guru: biodata.
-     * Hanya siswa di kelas yang diampu (guardStudent). Reuse view wali/child-profile.
+     * Profil siswa (read-only) untuk guru: profil murid lengkap + orang tua.
+     * Hanya siswa di kelas yang diampu (guardStudent).
      */
     public function showStudent(Student $student): View
     {
         $this->guardStudent($student);
-        $student->load(['schoolClass.homeroomTeacher', 'ortu', 'academicYear']);
-
-        return view('ortu.child-profile', [
-            'student' => $student,
-            'backUrl' => route('guru.dashboard'),
-            'backLabel' => 'Kembali ke Dashboard',
+        $student->load([
+            'schoolClass.academicYear', 'schoolClass.homeroomTeacher', 'ortu.user', 'academicYear',
         ]);
+
+        return view('guru.student-profile', compact('student'));
     }
 
     /**
@@ -130,36 +128,27 @@ class GuruController extends Controller
     public function updatePassword(Request $request): RedirectResponse
     {
         $request->validate([
-            'username' => ['required', 'string', 'min:6', 'max:30', 'regex:/^[a-zA-Z0-9_.]+$/', Rule::unique('users', 'username')->ignore(Auth::id(), 'id_users')],
-            'email'    => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore(Auth::id(), 'id_users')],
             'current_password' => ['required', 'current_password'],
             'password' => ['required', 'confirmed', Password::min(8)],
         ], [
-            'username.regex'  => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi/tanda hubung).',
-            'username.min'    => 'Username minimal 6 karakter.',
-            'username.unique' => 'Username ini sudah digunakan.',
-            'email.required'  => 'Email wajib diisi.',
-            'email.unique'    => 'Email ini sudah digunakan.',
             'current_password.current_password' => 'Password saat ini salah.',
             'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
         Auth::user()->update([
-            'username'             => $request->username,
-            'email'                => $request->email,
             'password'             => Hash::make($request->password),
             'must_change_password' => false,
         ]);
 
-        return back()->with('success', 'Username & password berhasil diperbarui.');
+        return back()->with('success', 'Password berhasil diperbarui.');
     }
 
     /**
-     * Memperbarui email & no. HP akun guru sendiri (T2.3, T6.4).
+     * Memperbarui username, email & no. HP akun guru sendiri (T2.3, T6.4).
      *
-     * Guru boleh mengisi/mengubah email (opsional) & no. HP (wajib — identifier
-     * login). no_hp disinkron ke profil teachers (unique index terpisah).
-     * Validasi unique mengabaikan baris milik guru ini sendiri.
+     * Guru boleh mengisi/mengubah username (wajib — identifier login), email
+     * (opsional) & no. HP (wajib). no_hp disinkron ke profil teachers (unique
+     * index terpisah). Validasi unique mengabaikan baris milik guru ini sendiri.
      */
     public function updateAccount(Request $request): RedirectResponse
     {
@@ -167,6 +156,7 @@ class GuruController extends Controller
         $teacher = $user->teacher;
 
         $data = $request->validate([
+            'username' => ['required', 'string', 'min:6', 'max:30', 'regex:/^[a-zA-Z0-9_.]+$/', Rule::unique('users', 'username')->ignore($user->id_users, 'id_users')],
             'email' => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id_users, 'id_users')],
             'no_hp' => [
                 ...ValidationRules::noHp(),
@@ -175,13 +165,16 @@ class GuruController extends Controller
             ],
         ], [
             ...ValidationRules::messages(),
+            'username.regex'  => 'Username hanya boleh huruf, angka, titik, dan underscore (tanpa spasi/tanda hubung).',
+            'username.min'    => 'Username minimal 6 karakter.',
+            'username.unique' => 'Username ini sudah digunakan.',
             'no_hp.required' => 'Nomor HP wajib diisi (dipakai untuk login).',
             'email.unique' => 'Email ini sudah digunakan.',
             'no_hp.unique' => 'Nomor HP ini sudah digunakan.',
         ]);
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($user, $teacher, $data) {
-            $user->update(['email' => $data['email'] ?? null, 'no_hp' => $data['no_hp']]);
+            $user->update(['username' => $data['username'], 'email' => $data['email'] ?? null, 'no_hp' => $data['no_hp']]);
             $teacher?->update(['no_hp' => $data['no_hp']]);
         });
 

@@ -185,7 +185,9 @@
                             $kelasNama = $student->schoolClass?->nama_kelas ?? '-';
                             $badge = $student->status === 'aktif'
                                 ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-rose-100 text-rose-700';
+                                : ($student->status === 'alumni'
+                                    ? 'bg-sky-100 text-sky-700'
+                                    : 'bg-rose-100 text-rose-700');
                         @endphp
                         <tr class="text-slate-600 hover:bg-slate-50 transition-colors"
                             x-data="{ editOpen: false }"
@@ -204,7 +206,7 @@
                             <td class="py-4 text-slate-500">{{ $student->schoolClass?->homeroomTeacher?->nama ?? '-' }}</td>
                             <td class="py-4">
                                 <span class="inline-block px-2.5 py-0.5 rounded text-4xs font-bold uppercase tracking-wide {{ $badge }}">
-                                    {{ ucfirst($student->status ?? 'nonaktif') }}
+                                    {{ ['calon' => 'Calon', 'aktif' => 'Aktif', 'alumni' => 'Alumni', 'nonaktif' => 'Nonaktif'][$student->status] ?? ucfirst($student->status ?? 'nonaktif') }}
                                 </span>
                             </td>
                             <td class="py-4 text-right shrink-0">
@@ -219,9 +221,9 @@
                                     @endif
                                 </div>
 
-                                <!-- Edit Profil Modal (form asli PUT) -->
+                                <!-- Edit Profil Modal (form asli PUT) — layout 2 kolom (konsisten admin) -->
                                 <div x-show="editOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs text-left" x-cloak>
-                                    <div class="bg-white rounded-[2.5rem] p-8 max-w-md w-full border border-slate-100 shadow-2xl space-y-6" @click.away="editOpen = false">
+                                    <div class="bg-white rounded-[2.5rem] p-8 max-w-lg w-full border border-slate-100 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto" @click.away="editOpen = false">
                                         <div class="flex justify-between items-start">
                                             <h3 class="text-lg font-bold text-slate-950">Edit Profil Murid</h3>
                                             <button type="button" @click="editOpen = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100 transition-colors">
@@ -233,28 +235,19 @@
                                             @csrf
                                             @method('PUT')
 
-                                            <div class="space-y-1">
-                                                <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Nama Lengkap</label>
-                                                <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap', $student->nama_lengkap) }}" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
-                                            </div>
-
-                                            <div class="space-y-1">
-                                                <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Nama Panggilan</label>
-                                                <input type="text" name="nama_panggilan" value="{{ old('nama_panggilan', $student->nama_panggilan) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
-                                            </div>
-
-                                            <div class="space-y-1">
-                                                <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Tempat Lahir</label>
-                                                <input type="text" name="tempat_lahir" value="{{ old('tempat_lahir', $student->tempat_lahir) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
-                                            </div>
-
-                                            <div class="space-y-1">
-                                                <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Tanggal Lahir</label>
-                                                <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', optional($student->tanggal_lahir)->format('Y-m-d')) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
-                                            </div>
-
-                                            {{-- L1.2: field profil murid (alamat kini di profil orang tua). --}}
-                                            <div class="grid grid-cols-2 gap-3">
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div class="space-y-1">
+                                                    <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Nama Lengkap</label>
+                                                    <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap', $student->nama_lengkap) }}" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
+                                                </div>
+                                                <div class="space-y-1">
+                                                    <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Nama Panggilan</label>
+                                                    <input type="text" name="nama_panggilan" value="{{ old('nama_panggilan', $student->nama_panggilan) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
+                                                </div>
+                                                <div class="space-y-1">
+                                                    <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">NIK (16 digit)</label>
+                                                    <input type="text" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" value="{{ old('nik', $student->nik) }}" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
+                                                </div>
                                                 <div class="space-y-1">
                                                     <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Jenis Kelamin</label>
                                                     <select name="jenis_kelamin" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
@@ -266,6 +259,21 @@
                                                     <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Agama</label>
                                                     <select name="agama" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
                                                         @foreach(['ISLAM','KRISTEN','KATOLIK','HINDU','BUDDHA','KONGHUCU'] as $o)<option value="{{ $o }}" @selected($student->agama===$o)>{{ $o }}</option>@endforeach
+                                                    </select>
+                                                </div>
+                                                <div class="space-y-1">
+                                                    <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Tempat Lahir</label>
+                                                    <input type="text" name="tempat_lahir" value="{{ old('tempat_lahir', $student->tempat_lahir) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
+                                                </div>
+                                                <div class="space-y-1">
+                                                    <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Tanggal Lahir</label>
+                                                    <input type="date" name="tanggal_lahir" value="{{ old('tanggal_lahir', optional($student->tanggal_lahir)->format('Y-m-d')) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
+                                                </div>
+                                                <div class="space-y-1">
+                                                    <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Ukuran Baju</label>
+                                                    <select name="ukuran_baju" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
+                                                        <option value="">-</option>
+                                                        @foreach(['S','M','L','XL','XXL','Jumbo'] as $o)<option value="{{ $o }}" @selected($student->ukuran_baju===$o)>{{ $o }}</option>@endforeach
                                                     </select>
                                                 </div>
                                                 <div class="space-y-1">
@@ -286,16 +294,10 @@
                                                 </div>
                                                 <div class="space-y-1 col-span-2">
                                                     <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Kondisi Kesehatan Khusus</label>
-                                                    <input type="text" name="kondisi_kesehatan" value="{{ old('kondisi_kesehatan', $student->kondisi_kesehatan) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
-                                                </div>
-                                                <div class="space-y-1">
-                                                    <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Ukuran Baju</label>
-                                                    <select name="ukuran_baju" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
-                                                        <option value="">-</option>
-                                                        @foreach(['S','M','L','XL','XXL','Jumbo'] as $o)<option value="{{ $o }}" @selected($student->ukuran_baju===$o)>{{ $o }}</option>@endforeach
-                                                    </select>
+                                                    <input type="text" name="kondisi_kesehatan" value="{{ old('kondisi_kesehatan', $student->kondisi_kesehatan) }}" placeholder="Tulis 'TIDAK ADA' bila tak ada" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
                                                 </div>
                                             </div>
+
                                             {{-- Cabang mengaji --}}
                                             <div x-data="{ mengaji: '{{ $student->sudah_mengaji }}' }" class="space-y-3">
                                                 <div class="space-y-1">
@@ -310,6 +312,7 @@
                                                     <div class="space-y-1"><label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Jilid</label><input type="text" name="ngaji_jilid" value="{{ $student->ngaji_jilid }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500"></div>
                                                 </div>
                                             </div>
+
                                             {{-- Cabang pernah belajar --}}
                                             <div x-data="{ belajar: '{{ $student->pernah_belajar }}' }" class="space-y-3">
                                                 <div class="space-y-1">

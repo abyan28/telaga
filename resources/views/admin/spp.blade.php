@@ -41,8 +41,8 @@
                         <th class="py-3">Murid</th>
                         <th class="py-3">Bank Asal</th>
                         <th class="py-3">Tanggal &amp; Waktu</th>
-                        <th class="py-3 text-right">Jumlah</th>
-                        <th class="py-3">Bukti</th>
+                        <th class="py-3">Jumlah</th>
+                        <th class="py-3 text-center">Bukti</th>
                         <th class="py-3 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -56,10 +56,17 @@
                                 {{ $tx->tanggal_bayar?->translatedFormat('d M Y') ?? '-' }}
                                 <span class="block text-4xs text-slate-300">{{ $tx->created_at?->format('H:i') }} WIB</span>
                             </td>
-                            <td class="py-3 text-right font-bold text-slate-900">Rp {{ number_format((int) $tx->jumlah, 0, ',', '.') }}</td>
-                            <td class="py-3">
+                            <td class="py-3 font-bold text-slate-900">Rp {{ number_format((int) $tx->jumlah, 0, ',', '.') }}</td>
+                            <td class="py-3 text-center">
                                 @if ($tx->bukti_path)
-                                    <a href="{{ asset('storage/'.$tx->bukti_path) }}" target="_blank" class="text-4xs font-bold text-indigo-600 hover:underline">Lihat Bukti</a>
+                                    <button type="button" onclick="openBerkas('{{ asset('storage/'.$tx->bukti_path) }}')"
+                                            class="inline-flex w-9 h-9 rounded border border-slate-200 overflow-hidden hover:border-indigo-400 transition-colors items-center justify-center bg-slate-50">
+                                        @if (preg_match('/\.(jpe?g|png|gif|webp)$/i', $tx->bukti_path))
+                                            <img src="{{ asset('storage/'.$tx->bukti_path) }}" class="w-full h-full object-cover" alt="Bukti">
+                                        @else
+                                            <span class="text-3xs font-black text-rose-500">PDF</span>
+                                        @endif
+                                    </button>
                                 @else <span class="text-4xs text-slate-300">-</span> @endif
                             </td>
                             <td class="py-3 text-right">
@@ -137,7 +144,7 @@
                         <th class="py-3 text-right">Tagihan</th>
                         <th class="py-3 text-right">Terbayar</th>
                         <th class="py-3 text-right">Sisa</th>
-                        <th class="py-3 text-center">Bukti</th>
+                        <th class="py-3 text-right">Bukti</th>
                         <th class="py-3 text-right">Status</th>
                     </tr>
                 </thead>
@@ -155,7 +162,7 @@
                             <td class="py-3 text-right">Rp {{ number_format((int) $b->nominal, 0, ',', '.') }}</td>
                             <td class="py-3 text-right">Rp {{ number_format((int) $b->jumlah_terbayar, 0, ',', '.') }}</td>
                             <td class="py-3 text-right font-bold text-slate-900">Rp {{ number_format((int) $b->sisa(), 0, ',', '.') }}</td>
-                            <td class="py-3 text-center">
+                            <td class="py-3 text-right">
                                 @if ($tx)
                                     <button type="button" onclick="openBerkas('{{ asset('storage/'.$tx->bukti_path) }}')"
                                             class="inline-flex w-9 h-9 rounded border border-slate-200 overflow-hidden hover:border-indigo-400 transition-colors items-center justify-center bg-slate-50">

@@ -43,7 +43,7 @@ return new class extends Migration
             $table->string('tempat_lahir');
             $table->date('tanggal_lahir');
             // Status siswa dalam sistem
-            $table->enum('status', ['aktif', 'lulus', 'nonaktif'])->default('aktif');
+            $table->string('status', 20)->default('aktif');
             $table->timestamps();
         });
     }

@@ -49,7 +49,7 @@
                     @forelse ($teachers as $teacher)
                         @php
                             $row = [
-                                'id' => $teacher->id_teachers, 'nama' => $teacher->nama, 'email' => $teacher->user?->email,
+                                'id' => $teacher->id_teachers, 'slug' => $teacher->slug, 'nama' => $teacher->nama, 'email' => $teacher->user?->email,
                                 'nuptk' => $teacher->nuptk, 'no_hp' => $teacher->no_hp, 'jabatan' => $teacher->jabatan,
                                 'tempat_lahir' => $teacher->tempat_lahir, 'tanggal_lahir' => optional($teacher->tanggal_lahir)->format('Y-m-d'),
                                                 'jenis_kelamin' => $teacher->jenis_kelamin,
@@ -274,7 +274,7 @@
             openCreate() { this.mode = 'create'; this.action = '{{ route('admin.teachers.store') }}'; this.f = { ...blank }; this.open = true; },
             openEdit(t) {
                 this.mode = 'edit';
-                this.action = '/portal/admin/teachers/' + t.id;
+                this.action = '/portal/admin/teachers/' + t.slug;
                 this.f = { ...blank, ...Object.fromEntries(Object.keys(blank).map(k => [k, t[k] ?? blank[k]])) };
                 this.open = true;
             },

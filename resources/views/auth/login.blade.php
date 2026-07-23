@@ -127,7 +127,7 @@
                                     this.cooldown = 60;
                                     clearInterval(this._timer);
                                     this._timer = setInterval(() => { this.cooldown--; if (this.cooldown <= 0) clearInterval(this._timer); }, 1000);
-                                } else { this.otpMsg = 'Gagal mengirim kode.'; }
+                                } else { this.otpMsg = d.error || 'Gagal mengirim kode.'; }
                             } catch { this.otpMsg = 'Terjadi kesalahan jaringan.'; }
                             this.otpLoading = false;
                         },
@@ -162,7 +162,7 @@
                     <div class="space-y-1">
                         <label for="signup-email" class="text-xs font-bold text-slate-500 uppercase tracking-wide">Alamat Email</label>
                         <div class="flex gap-2">
-                            <input id="signup-email" name="email" type="email" placeholder="nama@email.com" x-model="email" class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" required :disabled="otpVerified">
+                            <input id="signup-email" name="email" type="email" placeholder="nama@email.com" x-model="email" class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all" required x-bind:readonly="otpVerified">
                             <button type="button" @click="sendOtp()" :disabled="!email || cooldown > 0 || otpLoading || otpVerified"
                                     class="px-4 py-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white font-bold rounded-xl text-xs whitespace-nowrap transition-colors shrink-0">
                                 <span x-show="!otpSent || cooldown <= 0">Kirim Kode</span>
@@ -201,7 +201,6 @@
                             class="w-full py-4 bg-sky-600 hover:bg-sky-500 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold rounded-xl shadow-lg shadow-sky-100 hover:shadow-sky-200 transition-all hover:-translate-y-0.5">
                         Daftar Akun Baru
                     </button>
-                    <p x-show="!otpVerified" x-cloak class="text-3xs text-center text-slate-400">Verifikasi email dulu untuk mengaktifkan tombol daftar.</p>
                 </form>
             </div>
         </div>

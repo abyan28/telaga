@@ -179,12 +179,12 @@ class AdminWorkflowTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame('lulus', $form->fresh()->status);
-        $this->assertSame('aktif', $student->fresh()->status);
+        $this->assertSame('calon', $student->fresh()->status);
     }
 
     /**
-     * K3.1: keputusan ditolak bila form belum mencapai 'diproses_seleksi'
-     * (mis. berkas belum tuntas). Status tidak berubah.
+     * K3.3: admin dapat membuka kembali keputusan lulus/gagal → form kembali
+     * ke 'diproses_seleksi' & siswa 'calon' (siap ditetapkan ulang).
      */
     public function test_decide_blocked_before_selection_stage(): void
     {
@@ -205,8 +205,8 @@ class AdminWorkflowTest extends TestCase
     }
 
     /**
-     * K3.3: admin dapat membuka kembali keputusan lulus/gagal → form kembali
-     * ke 'diproses_seleksi' & siswa 'aktif' (siap ditetapkan ulang).
+         * K3.3: admin dapat membuka kembali keputusan lulus/gagal → form kembali
+         * ke 'diproses_seleksi' & siswa 'calon' (siap ditetapkan ulang).
      */
     public function test_admin_can_reopen_decision(): void
     {
@@ -225,7 +225,7 @@ class AdminWorkflowTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame('diproses_seleksi', $form->fresh()->status);
-        $this->assertSame('aktif', $student->fresh()->status);
+        $this->assertSame('calon', $student->fresh()->status);
     }
 
     /**

@@ -201,10 +201,34 @@
     <div x-show="tab === 'password'" x-cloak class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-6">
         <div>
             <h3 class="text-base font-bold text-slate-950">Ganti Password</h3>
-            <p class="text-xs text-slate-400 mt-1">Password awal Anda adalah NUPTK. Wajib diganti saat login pertama sekaligus menetapkan username.</p>
+            <p class="text-xs text-slate-400 mt-1">Password awal Anda adalah NUPTK. Wajib diganti saat login pertama.</p>
         </div>
 
-        <form action="{{ route('guru.password.update') }}" method="POST" class="space-y-4"
+        <form action="{{ route('guru.password.update') }}" method="POST" class="space-y-4">
+            @csrf
+            <div class="space-y-1">
+                <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Password Saat Ini</label>
+                <x-password-input name="current_password" :required="true" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500" />
+            </div>
+            <div class="space-y-1">
+                <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Password Baru (min 8)</label>
+                <x-password-input name="password" :required="true" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500" />
+            </div>
+            <div class="space-y-1">
+                <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Konfirmasi Password Baru</label>
+                <x-password-input name="password_confirmation" :required="true" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500" />
+            </div>
+            <button type="submit" class="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl shadow-md text-xs transition-colors">Simpan Password Baru</button>
+        </form>
+    </div>
+
+    <div x-show="tab === 'akun'" x-cloak class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-6">
+        <div>
+            <h3 class="text-base font-bold text-slate-950">Pengaturan Akun</h3>
+            <p class="text-xs text-slate-400 mt-1">Perbarui username, email & nomor HP. Username dipakai untuk login.</p>
+        </div>
+
+        <form action="{{ route('guru.account.update') }}" method="POST" class="space-y-4"
               x-data="{
                 username: @js(old('username', auth()->user()->username)),
                 status: '',
@@ -232,34 +256,6 @@
                     <span x-show="status==='invalid'">✗ Min 6 karakter, hanya huruf/angka/titik/underscore</span>
                 </p>
             </div>
-            <div class="space-y-1">
-                <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Email</label>
-                <input type="email" name="email" value="{{ old('email', auth()->user()->email) }}" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">
-            </div>
-            <div class="space-y-1">
-                <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Password Saat Ini</label>
-                <x-password-input name="current_password" :required="true" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500" />
-            </div>
-            <div class="space-y-1">
-                <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Password Baru (min 8)</label>
-                <x-password-input name="password" :required="true" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500" />
-            </div>
-            <div class="space-y-1">
-                <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Konfirmasi Password Baru</label>
-                <x-password-input name="password_confirmation" :required="true" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500" />
-            </div>
-            <button type="submit" class="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-xl shadow-md text-xs transition-colors">Simpan Password Baru</button>
-        </form>
-    </div>
-
-    <div x-show="tab === 'akun'" x-cloak class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-6">
-        <div>
-            <h3 class="text-base font-bold text-slate-950">Pengaturan Akun</h3>
-            <p class="text-xs text-slate-400 mt-1">Perbarui email & nomor HP. Keduanya bisa dipakai untuk login.</p>
-        </div>
-
-        <form action="{{ route('guru.account.update') }}" method="POST" class="space-y-4">
-            @csrf
             <div class="space-y-1">
                 <label class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Email (opsional)</label>
                 <input type="email" name="email" value="{{ old('email', auth()->user()->email) }}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-teal-500">

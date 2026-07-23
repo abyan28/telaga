@@ -40,8 +40,28 @@
 - [done] tambahkan kolom angkatan pada datatabel di halaman data murid
 - blokw212728
 - [done] kirimkan email saat menerima tagihan pembayaran ppdb, pembayaran daftar ulang, dan pembayaran spp. kirimkan email juga untuk memberitahukan status kelulusan calon murid. kirimkan email juga saat verifikasi pembayaran berhasil untuk pembayaran ppdb, daftar ulang, dan spp. Jangan lupa ya, isi emailnya bukan sekedar pemberitahuan saja, melainkan juga lengkap dengan detail transaksinya.
+- [done] saat input data guru, coba cek apakah benar form email yg diisi akan masuk ke kolom username pada database?
+- [done] cek lagi UI halaman calon murid
+- [done] tampilkan profil lengkap murid dan profil lengkap ortu di halaman profil murid di cms guru.
+- [done] floating modal halaman edit murid pada cms guru stuck, tidak bisa di-scroll. coba cek masalahnya apa.
+- [done] saat mau generate NIS, cek dulu apakah ada calon murid di daftar ulang yg belum membayar sama sekali (terbayar=0), namun dia sudah upload bukti pembayaran daftar ulang dan belum diverifikasi? takutnya jika masih ada, nanti dia NIS nya gak urut abjad, sebab dia belum masuk ke tabel calon murid yg nantinya bakal di-generate NIS-nya.
+- [done] filter tahun ajaran di halaman pendaftaran murid harusnya default-nya otomatis menampilkan tahun ajaran ppdb terbaru, namun yg terjadi saat ini filternya hanya menuju ke tahun ajaran 2026/2027 saja.
+- [done] form username pada halaman akun & profil pada cms guru, pindah ke tab slidebar akun. Jadi agar tab slidebar ganti password ini khusus ganti password saja.
+- [done] saat guru dipilih sebagai wali kelas baik dari form tambah/edit di halaman data guru maupun dari form tambah/edit kelas, maka otomatis guru yg dipilih sebagai wali kelas itu mengampu kelas tersebut. state sistem yg sekarang, belum seperti itu. coba cek.
+- [done] fitur remind me di halaman login
 
-aku coba buat akun baru di halaman login, sudah memasukkan kode verifikasi dengan benar, namun kenapa saat klik Daftar Akun Baru, malah muncul notif "Email belum diverifikasi. Silakan kirim kode verifikasi terlebih dahulu.". AKu cek di database, akunku juga belum terdaftar di database walau kode verifikasi yg aku masukkan sesuai.'
+
+ ← Kembali ke Dashboard   
+┌────────────────────────────────────────────┐
+│    Profil Murid    │   Profil Orang Tua    |
+├────────────────────────────────────────────|
+|    Tampilan        |   tampilan            |
+|    semua           |   semua               |
+|    data            |   data                |
+|    murid           |   ortu                |
+
+Nah, kira2 UI nya begini, mirip halaman dafta ulang. Nanti tab-nya itu berbentuk slide gitu, persis kayak di halaman daftar ulang.
+                     
 
 DISKUSI K10.4
 - setelah membaca opsi-opsi yang kamu berikan, bagaimana kalau kita buat halaman baru untuk mengelola data orang tua? Halamannya mirip halaman data siswa, jadi berupa datatable, ada fungsi search, paginasi, filter kelas, filter status aktif. Untuk judul kolomnya kira2 begini -> Nama Orang Tua - No. HP - Pekerjaan - Nama Anak - Nama Wali Kelas - Kelas - Status - Aksi. Untuk kolom anak, nama wali kelas, dan kelas, jika anaknya lebih dari satu, tetap buat dalam satu kolom namun nama anaknya ditumpuk, begitupun juga dengan nama wali kelas dan kelasnya, tapi harus sejajar dengan nama anaknya ya. Itu dengan catatan kalau tiap anak itu wali kelas dan kelasnya beda. Kalau wali kelas dan kelasnya sama, ya isi masing2 satu data wali kelas dan kelas. Nanti di kolom aksi ada button untuk lihat profil lengkap orang tua (ada alamat juga beserta list semua anaknya), edit profil orang tua, dan tentu button untuk flag bisa cicil atau gak. 

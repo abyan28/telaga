@@ -63,6 +63,8 @@
         $isGagal = $status === 'gagal';
         // Butuh unggah bukti bila belum ada pembayaran diverifikasi/menunggu.
         $butuhBukti = in_array($status, ['submitted', 'menunggu_bukti'], true);
+        $reReg = $form->student?->reRegistrationPayments->first();
+        $duLunas = $reReg && $reReg->sisa() <= 0;
     @endphp
 
     <div x-data="{ showPaymentModal: false }" x-show="activeChild === {{ $loop->index }}" class="space-y-8">
@@ -90,11 +92,15 @@
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                         <span>Upload Bukti Pendaftaran</span>
                     </button>
-                @elseif ($isLulus)
+                @elseif ($isLulus && !$duLunas)
                     <a href="{{ route('ortu.payments') }}" class="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center space-x-2">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                         <span>Bayar Daftar Ulang</span>
                     </a>
+                @elseif ($isLulus && $duLunas)
+                    <div class="text-xs text-emerald-700 font-bold bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 text-center sm:text-left max-w-xs">
+                        Pembayaran daftar ulang sudah lunas.
+                    </div>
                 @elseif ($isGagal)
                     <div class="text-xs text-rose-600 font-bold bg-rose-50 border border-rose-100 rounded-xl px-4 py-3 text-center sm:text-left max-w-xs">
                         Mohon maaf, calon murid dinyatakan belum lulus seleksi pada periode ini.

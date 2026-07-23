@@ -272,6 +272,10 @@ Referensi: PRD §7.15, rules.md §1.8, workflow.md §4, plan `.hermes/plans/2026
   * CATATAN: binding view admin & guru didelegasikan ke 2 subagent paralel; hasil diverifikasi ulang mandiri via smoke test (bukan hanya self-report).
 - [ ] Task 3.C - Deployment awal `[Sedang]`
 
+## Utility Command (2026-07-23)
+- [x] ✅ `php artisan app:reset-all` — factory reset DB + storage `[Sedang]` (Selesai)
+  * `app/Console/Commands/ResetAllCommand.php`: truncate 23 tabel aplikasi, hapus storage (konten/pembayaran/pendaftaran/profil), seed ulang admin + academicYear 2026/2027 + 7 settings default. Tabel wilayah, bank, site_contents dipertahankan. Konfirmasi "RESET".
+
 ---
 
 ## Tambahan Infrastruktur (2026-07-19)
@@ -1312,5 +1316,19 @@ Plan `boleh_cicil` per-wali DIBATALKAN — user konfirmasi update: pendaftaran &
   - `PaymentVerificationService::notifikasiWali()` — private method, dipanggil dari `approve()`. Skip jenis=refund & wali tanpa email. Detail: nama siswa, jenis, bulan (SPP), jumlah, bank asal, tanggal bayar, sisa tunggakan (DU/SPP), rekening sekolah.
   - `RegistrationController@decide` — email lulus/gagal di-upgrade ke detail (nama anak, tahun ajaran, biaya DU + rekening bila lulus).
   - `GenerateSppBills` — kirim email tagihan baru per-siswa bila `wasRecentlyCreated`; ganti `->get()` → `->cursor()` (hemat RAM). Detail: nama siswa, bulan, nominal, rekening.
-  - Test baru `test_payment_verification_sends_detailed_email` (CrossFeatureTest).
+   - Test baru `test_payment_verification_sends_detailed_email` (CrossFeatureTest).
+   - 144 passed (551 assertions), build ✓.
+
+## Bugfix NIS — Calon Murid dengan Pembayaran DU Pending (2026-07-23)
+
+- [x] ✅ **NIS-FIX** Generate NIS juga untuk calon yg sudah upload bukti DU tapi belum diverifikasi.
+  - Masalah: query `generateNis()` hanya cek `reRegistrationPayments.jumlah_terbayar > 0`, sementara
+    siswa yg sudah upload bukti DU (transaksi `pending`) memiliki `jumlah_terbayar = 0`.
+    Mereka tidak masuk batch → NIS digenerate belakangan → urutan abjad rusak.
+  - Fix: tambah `orWhereHas('reRegistrationPayments.transactions', status=pending)` di:
+    `generateNis()`, `calonMurid()`, dan hitungan `$jumlahBelumNis`.
+  - View `calon-murid.blade`: eager load `transactions`, tampilkan "Menunggu Verifikasi" (amber)
+    untuk status DU pending, dan "Menunggu" di kolom Terbayar.
+  - File: `app/Http/Controllers/Admin/RegistrationController.php`,
+    `resources/views/admin/calon-murid.blade.php`.
   - 144 passed (551 assertions), build ✓.

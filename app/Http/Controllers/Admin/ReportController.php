@@ -217,14 +217,15 @@ class ReportController extends Controller
         $bills    = $this->sppQuery($request)->get();
         $filename = 'laporan-spp-'.now()->format('Ymd-His').'.csv';
 
+        // Eager load transaksi diverifikasi — hindari N+1 di loop.
+        $bills->loadMissing(['transactions' => fn ($q) => $q->where('status', 'diverifikasi')->latest()]);
+
         return Response::streamDownload(function () use ($bills) {
             $out = fopen('php://output', 'w');
             fputcsv($out, ['Nama Murid','Nama Ortu (Ibu)','Kelas','Tahun Ajaran','SPP Bulan','Tanggal Bayar','Waktu Bayar','Nominal','Terbayar','Sisa','Status'], ',', '"', '');
             foreach ($bills as $b) {
-                // Tanggal & waktu dari transaksi terakhir yang diverifikasi (pola daftar-ulang).
-                $last = $b->student?->paymentTransactions()
-                    ->where('jenis', 'spp')->where('referensi_id', $b->id_monthly_spp_bills)
-                    ->where('status', 'diverifikasi')->latest()->first();
+                // Tanggal & waktu dari transaksi terakhir yang diverifikasi.
+                $last = $b->transactions->first();
                 fputcsv($out, [
                     $b->student?->nama_lengkap,
                     $b->student?->ortu?->ibu_nama ?? $b->student?->ortu?->ayah_nama,

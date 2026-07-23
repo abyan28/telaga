@@ -22,24 +22,53 @@
             <x-avatar :path="$student->foto_path" :name="$student->nama_lengkap" size="w-20 h-20" />
             <h3 class="text-base font-bold text-slate-950">{{ $student->nama_lengkap }}</h3>
         </div>
-        <dl class="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
-            @foreach ([
-                'NIK' => $student->nik, 'NISN' => $student->nisn ?? '—',
-                'NIS' => $student->nis ?? '—', 'Angkatan' => $student->angkatan ?? '—',
+        @php
+            $biodata = [
+                'Nama Panggilan' => $student->nama_panggilan ?? '—',
+                'NIK' => $student->nik,
+                'NISN' => $student->nisn ?? '—',
+                'NIS' => $student->nis ?? '—',
+                'Angkatan' => $student->angkatan ?? '—',
                 'Jenis Kelamin' => ['L' => 'Laki-laki', 'P' => 'Perempuan'][$student->jenis_kelamin] ?? '-',
                 'Tempat, Tgl Lahir' => $student->tempat_lahir.', '.optional($student->tanggal_lahir)->translatedFormat('d F Y'),
+                'Agama' => $student->agama ?? '—',
+                'Anak ke-' => $student->anak_ke ?? '—',
+                'Jumlah Saudara' => $student->jumlah_saudara ?? '—',
+                'Warga Negara' => $student->warga_negara ?? '—',
+                'Bahasa Keseharian' => $student->bahasa_keseharian ?? '—',
+                'Kondisi Kesehatan' => $student->kondisi_kesehatan ?? '—',
+                'Ukuran Baju' => $student->ukuran_baju ?? '—',
+                'Sudah Mengaji' => $student->sudah_mengaji ?? '—',
+            ];
+            if (($student->sudah_mengaji ?? '') === 'Sudah') {
+                $biodata['Ngaji Di Mana'] = $student->ngaji_dimana ?? '—';
+                $biodata['Metode Mengaji'] = $student->ngaji_metode ?? '—';
+                $biodata['Jilid'] = $student->ngaji_jilid ?? '—';
+            }
+            $biodata['Pernah Belajar'] = $student->pernah_belajar ?? '—';
+            if (($student->pernah_belajar ?? '') !== 'Belum' && ($student->pernah_belajar ?? '') !== null) {
+                $biodata['Keterangan Belajar'] = $student->belajar_keterangan ?? '—';
+            }
+            $biodata += [
                 'Kelas' => $student->schoolClass?->nama_kelas ?? 'Belum Terbagi',
                 'Wali Kelas' => $student->schoolClass?->homeroomTeacher?->nama ?? '-',
                 'Orang Tua' => $student->ortu?->namaWali() ?? '-',
                 'Tahun Ajaran' => $student->academicYear?->tahun ?? '-',
                 'Status' => ucfirst($student->status),
-            ] as $label => $val)
+            ];
+        @endphp
+        <dl class="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
+            @foreach ($biodata as $label => $val)
                 <div>
                     <dt class="text-slate-400 font-semibold uppercase tracking-wide text-3xs">{{ $label }}</dt>
                     <dd class="font-bold text-slate-800 mt-0.5">{{ $val }}</dd>
                 </div>
             @endforeach
         </dl>
+        <div>
+            <dt class="text-slate-400 font-semibold uppercase tracking-wide text-3xs">Alamat Keluarga</dt>
+            <dd class="font-bold text-slate-800 mt-0.5">{{ $student->ortu ? trim(($student->ortu->alamat ?: '').' '.collect([$student->ortu->kelurahan_nama, $student->ortu->kecamatan_nama, $student->ortu->kota_nama, $student->ortu->provinsi_nama])->filter()->implode(', ')) : '-' }}</dd>
+        </div>
     </div>
 
     {{-- Tab bar (slidebar dalam halaman) — hindari scroll panjang (rules §6.2) --}}
@@ -82,10 +111,6 @@
                 <div>
                     <dt class="text-slate-400 font-semibold uppercase tracking-wide text-3xs">Email Akun</dt>
                     <dd class="font-bold text-slate-800 mt-0.5">{{ $g->user?->email ?: '-' }}</dd>
-                </div>
-                <div>
-                    <dt class="text-slate-400 font-semibold uppercase tracking-wide text-3xs">Alamat Keluarga</dt>
-                    <dd class="font-bold text-slate-800 mt-0.5">{{ trim(($g->alamat ?: '').' '.collect([$g->kelurahan_nama, $g->kecamatan_nama, $g->kota_nama, $g->provinsi_nama])->filter()->implode(', ')) ?: '-' }}</dd>
                 </div>
             </div>
         @else

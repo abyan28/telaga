@@ -196,16 +196,19 @@ class PaymentVerificationService
         }
 
         // Rekening tujuan sekolah (dari settings).
-        $rekening = trim(Setting::get('bank_sekolah', '').' '.Setting::get('rekening_sekolah', ''));
+        $bankSekolah     = Setting::get('bank_sekolah', '');
+        $rekeningSekolah = Setting::get('rekening_sekolah', '');
+        $atasNama        = Setting::get('atas_nama', '');
+        $rekening = trim($bankSekolah.' '.$rekeningSekolah);
         if ($rekening !== '') {
-            $atasNama = Setting::get('atas_nama', '');
             $detail['Rekening Sekolah'] = $rekening.($atasNama ? ' a.n. '.$atasNama : '');
         }
 
-        Mail::to($email)->send(new RegistrationNotification(
+        $mailable = (new RegistrationNotification(
             'Pembayaran '.$labelJenis.' Terverifikasi',
             'Pembayaran '.$labelJenis.' atas nama '.($trx->student?->nama_lengkap ?? 'siswa').' telah berhasil diverifikasi oleh Admin. Berikut rincian transaksinya.',
             $detail,
-        ));
+        ))->onQueue('spp-notifications');
+        Mail::to($email)->queue($mailable);
     }
 }

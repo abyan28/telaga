@@ -597,112 +597,112 @@ CATATAN VERIFIKASI CEPAT
 
 daftar uji:
 pov ortu
-- buat akun  
-- isi profil ortu 
-- ganti password 
-- ganti username 
-- cek login dengan username dan password baru 
-- daftar calon murid 
-- cek email
-- upload bukti bayar ppdb 
-- ke (ppdb) 
-- harusnya verifikasi berhasil dan masuk tahap verifikasi berkas 
-- cek email 
-- ke (ppdb) 
-- harusnya masuk ke proses seleksi 
-- ke (ppdb) 
-- harusnya status lulus/gagal 
-- cek email 
-- upload bukti bayar daful 
-- ke (ppdb) 
-- harusnya ada notif pembayaran berhasil/lunas 
-- cek email 
-- ke (ppdb) 
-- cek email
-- upload bukti bayar spp 
-- ke (pembayaran) 
-- harusnya lunas 
-- cek email 
-- kembali ke (pembayaran) 
+- buat akun 1 y
+- isi profil ortu 2 y
+- ganti password 3 y
+- ganti username 4 y
+- cek login dengan username dan password baru 5 y
+- daftar calon murid 6 y
+- cek email 7 y
+- upload bukti bayar ppdb 8 
+- ke (ppdb) 9
+- harusnya verifikasi berhasil dan masuk tahap verifikasi berkas 12
+- cek email 13
+- ke (ppdb) 14
+- harusnya masuk ke proses seleksi 17
+- ke (ppdb) 18
+- harusnya status lulus/gagal 20
+- cek email 21
+- upload bukti bayar daful 22
+- ke (ppdb) 23
+- harusnya ada notif pembayaran berhasil/lunas 27
+- cek email 28
+- ke (ppdb) 29
+- cek email 72
+- upload bukti bayar spp 73
+- ke (pembayaran) 74
+- harusnya lunas 78
+- cek email 79
+- kembali ke (pembayaran) 80
 
 - done
 
 pov admin
 (ppdb)
-- verifikasi payments ppdb 
-- kembali ke (pov ortu)
-- verifikasi berkas 
-- kembali ke (pov ortu) 
-- cek apakah calon murid masuk ke daftar ulang (harusnya belum masuk), daftar calon murid (harusnya belum masuk), dan data murid (harusnya belum masuk) 
-- keputusan lulus/gagal 
-- cek apakah calon murid masuk ke daftar ulang (harusnya masuk), daftar calon murid (harusnya belum masuk), dan data murid (harusnya belum masuk) 
-- kembali ke (pov ortu) 
-- verifikasi payments daful (>Rp. 0) 
-- cek apakah calon murid masuk ke daftar ulang (harusnya masuk), daftar calon murid (harusnya masuk), dan data murid (harusnya belum masuk) 
-- kembali ke (pov ortu) 
-- tombol generate nis harusnya masih belum bisa diklik 
-- ke (sistem) 
-- tutup ppdb 
-- batalkan salah satu pendaftar yg sudah bayar daftar ulang 
-- harusnya kena denda 30% dari biaya daftar ulang. 
-- tombol generate nis bisa diklik dan langsung klik aja 
-- harusnya NIS calon murid sudah terisi dan masuk ke data murid. 
-- ke (data guru) 
-- buka pendaftaran ppdb, cek harusnya TA aktif beda dg TA PPDB.
-- ulangi langkah pertama dengan memperhatikan tahun ajarannya.
+- verifikasi payments ppdb 10
+- kembali ke (pov ortu) 11
+- verifikasi berkas 15
+- kembali ke (pov ortu) 16
+- cek apakah calon murid masuk ke daftar ulang (harusnya belum masuk), daftar calon murid (harusnya belum masuk), dan data murid (harusnya belum masuk) 17
+- keputusan lulus/gagal 18
+- cek apakah calon murid masuk ke daftar ulang (harusnya masuk), daftar calon murid (harusnya belum masuk), dan data murid (harusnya belum masuk) 19
+- kembali ke (pov ortu) 20
+- verifikasi payments daful (>Rp. 0) 24
+- cek apakah calon murid masuk ke daftar ulang (harusnya masuk), daftar calon murid (harusnya masuk), dan data murid (harusnya belum masuk) 25
+- kembali ke (pov ortu) 26
+- tombol generate nis harusnya masih belum bisa diklik 27 30
+- ke (sistem) 28 31
+- tutup ppdb 32 35
+- batalkan salah satu pendaftar yg sudah bayar daftar ulang 33 36
+- harusnya kena denda 30% dari biaya daftar ulang. 34 37
+- tombol generate nis bisa diklik dan langsung klik aja 35 38
+- harusnya NIS calon murid sudah terisi dan masuk ke data murid. 36 39
+- ke (data guru) 37 40
+- buka pendaftaran ppdb, cek harusnya TA aktif beda dg TA PPDB. 87
+- ulangi langkah pertama dengan memperhatikan tahun ajarannya. 88
 - end
 
 (data guru)
-- tambah data guru 
-- ke (pov guru) 
-- lihat profil guru 
-- edit data guru 
-- nonaktifkan guru 
-- ke (pov guru) 
-- aktifkan kembali 
-- ke (pov guru) 
+- tambah data guru 38 41
+- ke (pov guru) 39 42
+- lihat profil guru 48 51
+- edit data guru  49 52
+- nonaktifkan guru 50 53 (perlu perbaikan)
+- ke (pov guru) 51 54
+- aktifkan kembali 54 57
+- ke (pov guru) 55 58
 - end
 
 (data kelas)
-- buat kelas dan tambahkan wali kelas 
-- kembali ke (pov guru) 
-- coba edit kelas 
-- hapus kelas 
-- ke (pov guru) 
-- tambah kelas dan tambahkan wali kelas lagi 
-- ke (pembayaran) 
+- buat kelas dan tambahkan wali kelas 43 46
+- kembali ke (pov guru) 44 47
+- coba edit kelas 58 61
+- hapus kelas 59 62
+- ke (pov guru) 60 63
+- tambah kelas dan tambahkan wali kelas lagi 63 66
+- ke (pembayaran) 64 67
 - end
 
 (pembayaran)
-- generate spp 
-- muncul tagihan semua siswa untuk bulan ini di halaman kelola pembayaran (perhatikan tahun ajarannya) 
-- ke (pov ortu) 
-- verifikasi bukti pembayaran spp 
-- harusnya tagihan lunas 
-- kembali ke (pov ortu) 
-- set biaya pendaftaran, daftar ulang, spp 
-- cek di halaman web depan bagian info apakah informasi biaya sudah sesuai 
-- set rekening bank sekolah 
-- ke (sistem)
+- generate spp 65 68 (fixed)
+- muncul tagihan semua siswa untuk bulan ini di halaman kelola pembayaran (perhatikan tahun ajarannya) 67 70 (2026/2027)
+- ke (pov ortu) 68 71
+- verifikasi bukti pembayaran spp 75
+- harusnya tagihan lunas 76
+- kembali ke (pov ortu) 77
+- set biaya pendaftaran, daftar ulang, spp 81
+- cek di halaman web depan bagian info apakah informasi biaya sudah sesuai 82
+- set rekening bank sekolah 83
+- ke (sistem) 84
 
 (sistem)
-- set nsm 
-- set denda refund 
-- kembali ke (ppdb) 
-- next tahun ajaran ppdb 
-- ke (ppdb)
+- set nsm 29 32
+- set denda refund 30 33
+- kembali ke (ppdb) 31 34
+- next tahun ajaran ppdb 85
+- ke (ppdb) 86
 
 pov guru
-- cek coba login dengan username=no hp guru dan password=nuptk 
-- harusnya bisa login dan disuruh wajib ganti password di tab ganti password dan wajib isi username dan email di tab akun pada halaman akun&profil. 
-- ke (data kelas) 
-- bisa lihat profil murid dan ortu dan edit profil murid 
-- coba edit apa saja profil murid (cek apakah berhasil edit) 
-- kembali ke (data guru) 
-- harusnya gak bisa login 
-- kembali ke (data guru) 
-- harusnya bisa login lagi 
-- kembali ke (data kelas) 
-- harusnya tidak muncul list murid lagi 
-- kembali ke (data kelas) 
+- cek coba login dengan username=no hp guru dan password=nuptk 40 43
+- harusnya bisa login dan disuruh wajib ganti password di tab ganti password dan wajib isi username dan email di tab akun pada halaman akun&profil. 41 44
+- ke (data kelas) 42 45
+- bisa lihat profil murid dan ortu dan edit profil murid 45 48
+- coba edit apa saja profil murid (cek apakah berhasil edit) 46 49 (belum dicek)
+- kembali ke (data guru) 47 50
+- harusnya gak bisa login 52 55
+- kembali ke (data guru) 53 56
+- harusnya bisa login lagi 56 59
+- kembali ke (data kelas) 57 60
+- harusnya tidak muncul list murid lagi 61 64
+- kembali ke (data kelas) 62 65
 - end

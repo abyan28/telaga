@@ -31,7 +31,7 @@
             <select name="status" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
                 <option value="semua" @selected(request('status', 'semua') === 'semua')>Semua Status</option>
                 <option value="aktif" @selected(request('status') === 'aktif')>Aktif</option>
-                <option value="lulus" @selected(request('status') === 'lulus')>Alumni (Lulus)</option>
+                <option value="alumni" @selected(request('status') === 'alumni')>Alumni</option>
                 <option value="nonaktif" @selected(request('status') === 'nonaktif')>Drop Out (Nonaktif)</option>
             </select>
             <select name="angkatan" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
@@ -68,7 +68,7 @@
                             <td class="py-3">{{ $s->schoolClass?->nama_kelas ?? '-' }}</td>
                             <td class="py-3">{{ $s->schoolClass?->homeroomTeacher?->nama ?? '-' }}</td>
                             <td class="py-3">{{ $s->ortu?->ibu_nama ?? $s->ortu?->ayah_nama ?? '-' }}</td>
-                            <td class="py-3">{{ ucfirst($s->status) }}</td>
+                            <td class="py-3">{{ ['calon' => 'Calon', 'aktif' => 'Aktif', 'alumni' => 'Alumni', 'nonaktif' => 'Nonaktif'][$s->status] ?? ucfirst($s->status) }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="7" class="py-6 text-center text-slate-400">Tidak ada data.</td></tr>

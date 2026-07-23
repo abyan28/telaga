@@ -90,6 +90,11 @@ class RegisterController extends Controller
             'email' => ['required', 'email', 'max:255'],
         ]);
 
+        // Cegah OTP ke email yang sudah terdaftar.
+        if (User::where('email', $request->email)->exists()) {
+            return response()->json(['error' => 'Email sudah terdaftar. Silakan login atau gunakan email lain.'], 422);
+        }
+
         // Resend cooldown: 60 detik sejak OTP terakhir dikirim
         $lastSent = $request->session()->get('otp_sent_at', 0);
         if (now()->getTimestamp() - $lastSent < 60) {

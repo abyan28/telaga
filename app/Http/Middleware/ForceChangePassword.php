@@ -18,6 +18,16 @@ class ForceChangePassword
     {
         $user = Auth::user();
 
+        // L4.1: user dinonaktifkan — logout paksa.
+        // Strict false (bukan null) agar user tanpa is_aktif eksplisit (default DB) tidak kena logout.
+        if ($user && $user->is_aktif === false) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('login')->withErrors(['login' => 'Akun ini sudah nonaktif. Hubungi admin.']);
+        }
+
         if ($user && $user->must_change_password) {
             // Izinkan akses form ganti-password itu sendiri + logout (hindari loop redirect).
             $target = $user->role === 'guru' ? 'guru.password' : 'ortu.password';

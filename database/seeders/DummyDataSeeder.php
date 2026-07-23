@@ -62,7 +62,7 @@ class DummyDataSeeder extends Seeder
         for ($i = 0; $i < 8; $i++) {
             $u = $this->ortu($idx);
             $nis = '12345678901225'.str_pad(++$this->nN, 3, '0', STR_PAD_LEFT);
-            $s = $this->murid($u, $this->k['lA'], $this->taLalu, $idx, 'lulus', $nis, 2025);
+            $s = $this->murid($u, $this->k['lA'], $this->taLalu, $idx, 'alumni', $nis, 2025);
             $f = $this->form($u, $s, $this->taLalu, 'lulus', 'diterima');
             $this->reReg($s, $this->taLalu, 1400000, 1400000, 'lunas');
             $this->trx($s, $u, 'pendaftaran', 150000, 'diverifikasi', '2025-05-10', $f->id_registration_forms);

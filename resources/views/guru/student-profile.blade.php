@@ -1,36 +1,30 @@
 @extends('layouts.dashboard')
 
 @section('title', $student->nama_lengkap.' — RA Al Kautsar')
-@section('header_title', 'Profil Anak')
+@section('header_title', 'Profil Murid')
 
 @section('content')
-{{-- K10.3: profil biodata + orang tua + catatan perkembangan guru (READ-ONLY untuk orang tua). --}}
-<div class="space-y-6 max-w-2xl" x-data="hashTabs('biodata')">
+<div class="space-y-8 max-w-3xl mx-auto" x-data="hashTabs('biodata')">
 
-    <a href="{{ $backUrl ?? route('ortu.children') }}" class="inline-flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-slate-600">&lsaquo; {{ $backLabel ?? 'Kembali ke Data Anak' }}</a>
+    <a href="{{ route('guru.dashboard') }}" class="inline-flex items-center gap-1 text-xs font-bold text-slate-400 hover:text-slate-600">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        <span>Kembali ke Dashboard</span>
+    </a>
 
-    {{-- Header ringkas (selalu tampil) --}}
-    <div class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs">
+    {{-- Tab bar (daftar-ulang style) --}}
+    <div class="flex gap-2 border-b border-slate-100">
+        <button @click="setTab('biodata')" :class="tab === 'biodata' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'"
+                class="px-4 py-3 border-b-2 font-bold text-xs transition-colors">Profil Murid</button>
+        <button @click="setTab('orang-tua')" :class="tab === 'orang-tua' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'"
+                class="px-4 py-3 border-b-2 font-bold text-xs transition-colors">Profil Orang Tua</button>
+    </div>
+
+    {{-- Tab: Profil Murid (biodata lengkap + alamat keluarga) --}}
+    <div x-show="tab === 'biodata'" x-cloak class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-4">
         <div class="flex items-center gap-4">
             <x-avatar :path="$student->foto_path" :name="$student->nama_lengkap" size="w-20 h-20" />
-            <div>
-                <h3 class="text-base font-bold text-slate-950">{{ $student->nama_lengkap }}</h3>
-                <p class="text-xs text-slate-400 mt-0.5">{{ $student->schoolClass?->nama_kelas ?? 'Belum ada kelas' }} · {{ $student->academicYear?->tahun ?? '-' }}</p>
-                <p class="text-3xs text-slate-400 mt-0.5">Wali Kelas: <span class="font-bold text-slate-600">{{ $student->schoolClass?->homeroomTeacher?->nama ?? '-' }}</span></p>
-            </div>
+            <h3 class="text-base font-bold text-slate-950">{{ $student->nama_lengkap }}</h3>
         </div>
-    </div>
-
-    {{-- Tab bar (rules §6.2) --}}
-    <div class="flex gap-2 border-b border-slate-100 overflow-x-auto">
-        @foreach (['biodata' => 'Biodata', 'orang-tua' => 'Profil Orang Tua'] as $key => $label)
-            <button @click="setTab('{{ $key }}')" :class="tab === '{{ $key }}' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'"
-                    class="whitespace-nowrap px-4 py-3 border-b-2 font-bold text-xs transition-colors">{{ $label }}</button>
-        @endforeach
-    </div>
-
-    {{-- Biodata --}}
-    <div x-show="tab === 'biodata'" x-cloak class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs">
         @php
             $biodata = [
                 'Nama Panggilan' => $student->nama_panggilan ?? '—',
@@ -59,42 +53,49 @@
                 $biodata['Keterangan Belajar'] = $student->belajar_keterangan ?? '—';
             }
             $biodata += [
+                'Kelas' => $student->schoolClass?->nama_kelas ?? 'Belum Terbagi',
                 'Wali Kelas' => $student->schoolClass?->homeroomTeacher?->nama ?? '-',
+                'Orang Tua' => $student->ortu?->namaWali() ?? '-',
+                'Tahun Ajaran' => $student->academicYear?->tahun ?? '-',
                 'Status' => ucfirst($student->status),
             ];
         @endphp
         <dl class="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             @foreach ($biodata as $label => $val)
                 <div>
-                    <dt class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">{{ $label }}</dt>
+                    <dt class="text-slate-400 font-semibold uppercase tracking-wide text-3xs">{{ $label }}</dt>
                     <dd class="font-bold text-slate-800 mt-0.5">{{ $val }}</dd>
                 </div>
             @endforeach
         </dl>
         <div>
-            <dt class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">Alamat Keluarga</dt>
+            <dt class="text-slate-400 font-semibold uppercase tracking-wide text-3xs">Alamat Keluarga</dt>
             <dd class="font-bold text-slate-800 mt-0.5">{{ $student->ortu ? trim(($student->ortu->alamat ?: '').' '.collect([$student->ortu->kelurahan_nama, $student->ortu->kecamatan_nama, $student->ortu->kota_nama, $student->ortu->provinsi_nama])->filter()->implode(', ')) : '-' }}</dd>
         </div>
     </div>
 
-    {{-- Profil Orang Tua / Orang Tua --}}
-    <div x-show="tab === 'orang-tua'" x-cloak class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs">
+    {{-- Tab: Profil Orang Tua (lengkap tanpa alamat) --}}
+    <div x-show="tab === 'orang-tua'" x-cloak class="bg-white border border-slate-100 rounded-[2rem] p-6 md:p-8 shadow-xs space-y-4">
+        <h3 class="text-base font-bold text-slate-950">Profil Orang Tua</h3>
         @if ($student->ortu)
             @php $g = $student->ortu; @endphp
             <div class="space-y-5">
                 @foreach (['ibu' => 'Ibu', 'ayah' => 'Ayah'] as $p => $sebutan)
                     @if ($g->{"ada_$p"} && $g->{"{$p}_nama"})
                         <div>
-                            <h4 class="text-3xs font-extrabold uppercase tracking-widest text-sky-500 mb-2">Data {{ $sebutan }}</h4>
-                            <dl class="grid grid-cols-2 gap-4 text-xs">
+                            <h4 class="text-3xs font-extrabold uppercase tracking-widest text-indigo-500 mb-2">Data {{ $sebutan }}</h4>
+                            <dl class="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs">
                                 @foreach ([
                                     'Nama' => $g->{"{$p}_nama"} ?: '-',
                                     'No. HP' => $g->{"{$p}_no_hp"} ?: '-',
+                                    'Tempat, Tgl Lahir' => trim(($g->{"{$p}_tempat_lahir"} ?: '').', '.optional($g->{"{$p}_tanggal_lahir"})->translatedFormat('d F Y'), ', ') ?: '-',
+                                    'Agama' => $g->{"{$p}_agama"} ?: '-',
+                                    'Pendidikan' => $g->{"{$p}_pendidikan"} ?: '-',
                                     'Pekerjaan' => ($g->{"{$p}_pekerjaan"} === 'LAINNYA' ? $g->{"{$p}_pekerjaan_lain"} : $g->{"{$p}_pekerjaan"}) ?: '-',
                                     'Penghasilan' => $g->{"{$p}_penghasilan"} ?: '-',
                                 ] as $label => $val)
                                     <div>
-                                        <dt class="text-3xs font-extrabold uppercase tracking-widest text-slate-400">{{ $label }}</dt>
+                                        <dt class="text-slate-400 font-semibold uppercase tracking-wide text-3xs">{{ $label }}</dt>
                                         <dd class="font-bold text-slate-800 mt-0.5">{{ $val }}</dd>
                                     </div>
                                 @endforeach
@@ -102,6 +103,10 @@
                         </div>
                     @endif
                 @endforeach
+                <div>
+                    <dt class="text-slate-400 font-semibold uppercase tracking-wide text-3xs">Email Akun</dt>
+                    <dd class="font-bold text-slate-800 mt-0.5">{{ $g->user?->email ?: '-' }}</dd>
+                </div>
             </div>
         @else
             <p class="text-xs text-slate-400">Murid ini belum tertaut ke akun orang tua.</p>

@@ -101,27 +101,24 @@ class GuruTest extends TestCase
 
     /**
      * T6.1: guru ganti password — password lama salah ditolak, benar diterima.
+     * Username & email kini dikelola di tab Akun (guru.account.update).
      */
     public function test_guru_change_password(): void
     {
         [$user] = $this->makeGuru('gp@test.id', 'G-PW');
 
         $this->actingAs($user)->post('/portal/guru/password', [
-            'username' => 'pak_guru', 'email' => 'gp@test.id', 'current_password' => 'salah', 'password' => 'barubaru8', 'password_confirmation' => 'barubaru8',
+            'current_password' => 'salah', 'password' => 'barubaru8', 'password_confirmation' => 'barubaru8',
         ])->assertSessionHasErrors('current_password');
 
-        // username < 6 ditolak
         $this->actingAs($user)->post('/portal/guru/password', [
-            'username' => 'abc', 'email' => 'gp@test.id', 'current_password' => 'x', 'password' => 'barubaru8', 'password_confirmation' => 'barubaru8',
-        ])->assertSessionHasErrors('username');
-
-        $this->actingAs($user)->post('/portal/guru/password', [
-            'username' => 'pak_guru', 'email' => 'gp@test.id', 'current_password' => 'x', 'password' => 'barubaru8', 'password_confirmation' => 'barubaru8',
+            'current_password' => 'x', 'password' => 'barubaru8', 'password_confirmation' => 'barubaru8',
         ])->assertRedirect();
         $this->assertTrue(Hash::check('barubaru8', $user->fresh()->password));
-        $this->assertSame('pak_guru', $user->fresh()->username);
         $this->assertFalse((bool) $user->fresh()->must_change_password);
     }
+
+
 
     /**
      * Membuat kelas + siswa di dalamnya.
@@ -185,18 +182,23 @@ class GuruTest extends TestCase
     }
 
     /**
-     * Guru dapat memperbarui email & no. HP sendiri (T2.3); sinkron users & teachers.
+     * Guru memperbarui username, email & no. HP sendiri (tab Akun;
+     * username pindah dari tab Ganti Password). Sinkron users & teachers.
      */
     public function test_guru_can_update_own_account(): void
     {
         [$user, $teacher] = $this->makeGuru('guru@test.id', 'G-1');
 
+        // Username < 6 ditolak.
         $this->actingAs($user)->post('/portal/guru/account', [
-            'email' => 'guru.baru@test.id',
-            'no_hp' => '081777666555',
+            'username' => 'abc', 'email' => 'guru.baru@test.id', 'no_hp' => '081777666555',
+        ])->assertSessionHasErrors('username');
+
+        $this->actingAs($user)->post('/portal/guru/account', [
+            'username' => 'pak_guru', 'email' => 'guru.baru@test.id', 'no_hp' => '081777666555',
         ])->assertRedirect();
 
-        $this->assertDatabaseHas('users', ['id_users' => $user->id_users, 'email' => 'guru.baru@test.id', 'no_hp' => '6281777666555']);
+        $this->assertDatabaseHas('users', ['id_users' => $user->id_users, 'username' => 'pak_guru', 'email' => 'guru.baru@test.id', 'no_hp' => '6281777666555']);
         $this->assertDatabaseHas('teachers', ['id_teachers' => $teacher->id_teachers, 'no_hp' => '6281777666555']);
     }
 

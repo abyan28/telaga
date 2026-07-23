@@ -399,6 +399,11 @@ Sistem Informasi Sekolah **RA Al Kautsar**, nama aplikasi **"TELAGA AL KAUTSAR"*
 - Kelas sekolah → model `SchoolClass` (bukan `Class`, keyword PHP). Tabel `classes`.
 - `sessions.user_id` dipertahankan default Laravel (driver hardcoded) — pengecualian sah dari konvensi.
 
+> ## Sesi 2026-07-23 — Factory Reset Command (SELESAI)
+> - Dibuat `app/Console/Commands/ResetAllCommand.php` (`php artisan app:reset-all`).
+> - Factory reset: truncate 23 tabel aplikasi, hapus 4 folder upload, seed ulang admin + academic year + 7 settings default.
+> - Konfirmasi ketik "RESET" sebelum eksekusi. Tabel referensi (wilayah, bank) + `site_contents` dipertahankan.
+> 
 ## Akun demo (setelah `migrate:fresh --seed` + `db:seed --class=DemoSeeder`)
 - Admin: `admin@telaga.sch.id` / `admin123` (di-set manual tiap sesi; seeder aslinya generate acak).
 - Wali A (2 anak): `wali@telaga.sch.id` / `password`
@@ -407,6 +412,7 @@ Sistem Informasi Sekolah **RA Al Kautsar**, nama aplikasi **"TELAGA AL KAUTSAR"*
 - Signup wali baru: form minta USERNAME (bukan nama), min 6, unik, tanpa spasi/tanda hubung; nama wali diisi via CMS.
 
 ## Perintah rutin
+- Factory reset total (DB + storage, admin+TA+settings dipertahankan): `php artisan app:reset-all`
 - Reset DB + data demo: `php artisan migrate:fresh --seed && php artisan db:seed --class=DemoSeeder && php artisan storage:reset --force`
 - **`php artisan storage:reset [--force]`**: hapus folder upload (`pendaftaran/`,`pembayaran/`,`konten/`,`profil/`) di disk public.
   Jalankan tiap reset DB — path bukti bayar/dokumen/foto di DB hilang saat fresh, filenya jadi yatim bila tak dihapus.

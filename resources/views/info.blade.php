@@ -31,7 +31,6 @@
                     <p class="text-xs text-slate-400 leading-normal">{{ $c['info.biaya_pendaftaran_desc'] ?? '' }}</p>
                     <div class="pt-4 border-t border-slate-200">
                         <span class="text-3xl font-black text-slate-900">Rp {{ number_format($biayaPendaftaran, 0, ',', '.') }}</span>
-                        <span class="text-2xs font-semibold text-slate-400 block mt-1 uppercase tracking-wide">*Dapat disesuaikan Admin</span>
                     </div>
                 </div>
             </div>

@@ -82,7 +82,7 @@
                     <tr><td class="py-2 pr-4 font-mono">bahasa_keseharian</td><td class="py-2 pr-4">✓</td><td class="py-2">Contoh: SUNDA</td></tr>
                     <tr><td class="py-2 pr-4 font-mono">kondisi_kesehatan</td><td class="py-2 pr-4">✓</td><td class="py-2">Tulis TIDAK ADA bila sehat</td></tr>
                     <tr><td class="py-2 pr-4 font-mono">tahun_ajaran</td><td class="py-2 pr-4"></td><td class="py-2">Format 2026/2027; default TA aktif</td></tr>
-                    <tr><td class="py-2 pr-4 font-mono">status</td><td class="py-2 pr-4"></td><td class="py-2">aktif / lulus / nonaktif; default aktif</td></tr>
+                    <tr><td class="py-2 pr-4 font-mono">status</td><td class="py-2 pr-4"></td><td class="py-2">calon / aktif / alumni / nonaktif; default aktif</td></tr>
                     <tr><td class="py-2 pr-4 font-mono">no_hp_ortu</td><td class="py-2 pr-4"></td><td class="py-2">Diisi → auto-buat akun ortu (sandi = NIK anak)</td></tr>
                 </tbody>
             </table>
